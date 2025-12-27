@@ -1,12 +1,20 @@
-# SANITY_CHECKLIST.md — Post Prompt #1 Verification
+# SANITY_CHECKLIST.md — Incremental Verification Gates
 
-This checklist verifies that **Prompt #1 (Django + DRF + JWT bootstrap)** completed correctly.
+This document defines **incremental sanity checks after each major Codex prompt**.
 
-Run these checks **before moving on** to region/subdomain work.
+Each section is **append-only**.
+- Earlier sections are never modified.
+- New prompts add new sections at the bottom.
+
+This allows safe progression without rewriting prior verification steps.
 
 ---
 
-## 1. Environment & Dependencies
+## Sanity Check — After Prompt #1 (Django + DRF + JWT Bootstrap)
+
+These checks verify that the core Django + DRF + JWT foundation is correct.
+
+### 1. Environment & Dependencies
 
 - Virtual environment is active in VS Code terminal:
   ```
@@ -24,7 +32,7 @@ Run these checks **before moving on** to region/subdomain work.
 
 ---
 
-## 2. Install & Migrate
+### 2. Install & Migrate
 
 ```bash
 pip install -r requirements.txt
@@ -37,7 +45,7 @@ Expected:
 
 ---
 
-## 3. Run Server
+### 3. Run Server
 
 ```bash
 python manage.py runserver
@@ -49,83 +57,130 @@ Expected:
 
 ---
 
-## 4. Health Endpoint (Core Check)
+### 4. Health Endpoint (Core Check)
 
 ```bash
-curl -s http://bc.localhost:8000/api/v1/health/
+curl -i http://bc.localhost:8000/api/v1/health/
 ```
 
 Expected:
-```json
-{"status": "ok"}
-```
+- HTTP 200
+- Body:
+  ```json
+  {"status": "ok"}
+  ```
 
 This confirms:
 - Django routing works
 - DRF is installed
 - Versioned API base is live
 
+> Health must remain **public (AllowAny)** even though DRF defaults to `IsAuthenticated`.
+
 ---
 
-## 5. Admin & JWT Smoke Test
+### 5. Admin & JWT Smoke Test
 
-### Create admin user
 ```bash
 python manage.py createsuperuser
 ```
 
-### Obtain JWT token
 ```bash
 curl -s -X POST http://bc.localhost:8000/api/v1/auth/token/ \
   -H "Content-Type: application/json" \
   -d '{"username":"<user>","password":"<pass>"}'
 ```
 
-Expected:
-- JSON response containing `access` and `refresh` tokens
-
-### Call protected endpoint
 ```bash
 curl -s http://bc.localhost:8000/api/v1/protected/ \
   -H "Authorization: Bearer <access_token>"
 ```
 
 Expected:
-- 200 response confirming auth works
+- Token issuance works
+- Protected endpoint returns HTTP 200
 
 ---
 
-## 6. Host / Subdomain Readiness
+### Exit Gate — Prompt #1
 
-Verify `ALLOWED_HOSTS` includes `.localhost`:
-```python
-ALLOWED_HOSTS = [".localhost", "localhost", "127.0.0.1"]
-```
-
-This is required for upcoming region/subdomain middleware.
-
----
-
-## 7. Git Hygiene
-
-Commit once all checks pass:
-```bash
-git status
-git add .
-git commit -m "Bootstrap Django + DRF + JWT + health endpoint"
-```
-
----
-
-## Exit Criteria
-
-You may proceed to **Prompt #2 (Region model + subdomain middleware)** only if:
-- Health endpoint returns OK
+You may proceed to **Prompt #2** only if:
+- Health endpoint returns HTTP 200
 - JWT auth works
 - Server runs cleanly
 - Changes are committed
 
 ---
 
-This checklist is intentionally short and repeatable.
+## Sanity Check — After Prompt #2 (Regions + Subdomain Middleware)
+
+These checks verify region identity, host parsing, and region-aware API context.
+
+---
+
+### 6. Migrate & Run Tests
+
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+- Region seed migration runs successfully (BC exists)
+- Middleware tests pass for `bc`, `localhost`, and alternate regions
+
+---
+
+### 7. Region / Subdomain Verification (Manual)
+
+```bash
+curl -i -H "Host: bc.localhost:8000" http://localhost:8000/api/v1/health/
+```
+
+```bash
+curl -i -H "Host: localhost:8000" http://localhost:8000/api/v1/health/
+```
+
+Optional (if Region exists):
+```bash
+curl -i -H "Host: on.localhost:8000" http://localhost:8000/api/v1/health/
+```
+
+Expected:
+- All return HTTP 200
+- Region resolution is asserted via automated tests
+
+---
+
+### 8. Host / Deployment Readiness
+
+Verify `ALLOWED_HOSTS` includes `.localhost`:
+```python
+ALLOWED_HOSTS = [".localhost", "localhost", "127.0.0.1"]
+```
+
+This ensures compatibility with subdomain routing and future deployment (e.g. `bc.transferportal.ca`).
+
+---
+
+### Exit Gate — Prompt #2
+
+You may proceed to **Prompt #3 (Accounts & Roles)** only if:
+- All Prompt #1 checks remain green
+- Region middleware behaves correctly
+- Tests pass
+- Changes are committed
+
+---
+
+## Future Prompts
+
+For each new major prompt:
+- Append a new **Sanity Check — After Prompt #N** section
+- Do **not** modify earlier sections
+- Treat each section as an immutable verification gate
+
+---
+
+This checklist is intentionally append-only and audit-friendly.
 
