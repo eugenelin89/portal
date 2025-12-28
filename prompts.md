@@ -107,3 +107,96 @@ After:
 - `python manage.py test`
 - `curl -i http://bc.localhost:8000/api/v1/health/`
 - `curl -i -H "Host: bc.localhost:8000" http://localhost:8000/api/v1/health/`
+
+---
+
+## Prompt 003 — Accounts, Roles, Coach Approval, and /api/v1/me/
+
+**Date:** 2025-12-27  
+**Tasks:** CODEX_TASKS.md — Task 2.1, 2.2, 2.3, 2.4
+
+### Prompt
+Implement Task 2.1, 2.2, 2.3, and 2.4 from CODEX_TASKS.md.
+
+Goal:
+- Add roles (player/parent, coach/manager, admin) and coach approval.
+- Add API endpoints for authentication context: /api/v1/me/
+- Add DRF permission classes for RBAC and approval checks.
+- Keep it minimal and MVP-safe.
+
+Constraints:
+- Do NOT implement leagues/teams/tryouts yet.
+- Do NOT change region middleware behavior.
+- Keep Django’s default User model unless you strongly need a custom user model. Prefer a UserProfile/AccountProfile linked OneToOne to User for role/approval fields.
+- Ensure all endpoints are region-safe (they can read request.region_code but do not need to filter by region yet).
+
+Requirements:
+
+1) Create an `accounts` app (if missing).
+
+2) Data model:
+- Create an AccountProfile model linked OneToOne to Django User with fields:
+  - role: choices = PLAYER, COACH, ADMIN (default PLAYER)
+  - is_coach_approved: boolean (default False)
+  - created_at, updated_at
+- Ensure profile is created automatically for new users (signal).
+- Admin users:
+  - If user.is_staff or user.is_superuser, treat them as ADMIN role in logic (or sync role automatically).
+
+3) Admin:
+- Register AccountProfile in Django admin.
+- Allow admin to set role and approve coaches from admin panel easily.
+
+4) API:
+- Add endpoint GET /api/v1/me/ returning:
+  - user id, username, email
+  - role
+  - is_coach_approved
+  - region_code (from request.region_code)
+- Add endpoint PATCH /api/v1/me/ to allow user to update safe fields only (MVP-safe):
+  - email (optional)
+  - (Do NOT allow role changes via API)
+
+5) Permissions (DRF):
+- Create permission classes:
+  - IsAdminRole: true if user.is_staff/superuser OR profile.role == ADMIN
+  - IsCoachRole: profile.role == COACH
+  - IsApprovedCoach: IsCoachRole AND profile.is_coach_approved is True
+  - IsSelf: object-level for user-owned resources (useful later)
+
+6) Wire RBAC defaults:
+- Keep REST_FRAMEWORK default permission as IsAuthenticated (already).
+- Ensure /api/v1/health/ remains AllowAny.
+- /api/v1/auth/token and refresh must remain accessible without being authenticated (make sure global default permissions do not block them).
+
+7) Tests:
+- Creating a user creates AccountProfile automatically with role PLAYER.
+- /api/v1/me/ requires auth and returns correct role/approval/region_code.
+- Coach role without approval fails IsApprovedCoach check (unit test the permission).
+- Staff/superuser passes IsAdminRole.
+
+Deliverables:
+- accounts app with models, signals, admin
+- api endpoint /api/v1/me/ (serializer + view)
+- permissions module
+- tests passing
+
+After:
+- Summarize changes
+- Show curl examples for /api/v1/me/ using JWT.
+
+
+### Outcome
+- Added `accounts` app with `AccountProfile` (role + coach approval) linked to User
+- Implemented automatic profile creation via signals
+- Registered AccountProfile in Django admin for role management and coach approval
+- Added RBAC permission classes (admin, coach, approved coach, self)
+- Implemented `/api/v1/me/` endpoint returning user info + `region_code`
+- Fixed `/api/v1/me/` GET to use instance-mode serialization (PATCH uses data + validation)
+- All tests pass after serializer fix
+
+### Verification
+- `python manage.py migrate`
+- `python manage.py test`
+- Obtain JWT token via `/api/v1/auth/token/`
+- Call `/api/v1/me/` with Authorization header and confirm role, approval, and region_code
