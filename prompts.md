@@ -309,4 +309,109 @@ After:
 - List teams (JWT required):
   - `curl http://localhost:8000/api/v1/teams/ -H "Authorization: Bearer <access_token>" -H "Host: bc.localhost:8000"`
 
+---
+
+## Prompt 005 — Tryouts Listings (Region-Scoped, Public Read)
+
+
+**Date:** 2025-12-28
+**Tasks:** CODEX_TASKS.md — Task 4.1, 4.2, 4.3
+
+### Prompt
+
+Implement Task 4.1, 4.2, and 4.3 from CODEX_TASKS.md.
+
+Goal:
+- Introduce region-scoped Tryout listings.
+- Allow associations/teams to post tryout dates and registration links.
+- Allow families to discover tryouts without phone calls or private outreach.
+
+Constraints:
+- Keep everything region-aware using request.region.
+- Do NOT implement player “Open” status yet.
+- Do NOT implement applications, rosters, or acceptance flows yet.
+- Keep APIs read-only for non-admin users.
+- Keep schema minimal and MVP-safe.
+
+Requirements:
+
+1) Create a new Django app: `tryouts`.
+
+2) Models:
+
+TryoutEvent
+- id
+- region (FK to Region, required)
+- association (FK to Association, required)
+- team (FK to Team, nullable)
+- name (e.g. “13U AAA Tryouts”)
+- start_date
+- end_date
+- location (text)
+- registration_url (URLField)
+- notes (optional text)
+- is_active (default True)
+- created_at / updated_at
+
+Rules:
+- TryoutEvent.region must match Association.region
+- If team is set, Team.region must match TryoutEvent.region
+
+3) Admin:
+- Register TryoutEvent in Django admin
+- Enforce region consistency validation
+- Admin users can create/edit tryouts
+
+4) API:
+- GET /api/v1/tryouts/
+- GET /api/v1/tryouts/<id>/
+
+Behavior:
+- Results filtered by request.region
+- Only active tryouts returned by default
+- Sorted by start_date ascending
+- No authentication required for GET (AllowAny)
+
+5) Permissions:
+- Read-only for all users (including anonymous)
+- Write operations restricted to ADMIN users only
+
+6) Tests:
+- Tryouts are filtered by region
+- Inactive tryouts are excluded
+- Region mismatch validation enforced
+- Anonymous users can list and view tryouts
+- Non-admin users cannot create/update tryouts
+
+Deliverables:
+- tryouts app with models, migrations, admin
+- DRF serializers + viewsets
+- URL routing
+- Permissions enforced
+- Tests passing
+
+After:
+- Summarize changes
+- Show curl examples for listing tryouts under bc.localhost
+
+### Outcome
+- Added `tryouts` app with region-scoped `TryoutEvent` model
+- Registered TryoutEvent in Django admin
+- Enforced region consistency validation (TryoutEvent.region matches Association.region; Team.region matches if set)
+- Implemented public, read-only DRF endpoints filtered by `request.region` and `is_active`
+- Wired `/api/v1/tryouts/` routes
+- Added tests for:
+- region filtering
+- active-only behavior
+- validation rules
+- permissions (anonymous reads allowed; non-admin writes blocked)
+
+
+### Verification
+- `python manage.py migrate`
+- `python manage.py test`
+- List tryouts (public):
+- `curl http://localhost:8000/api/v1/tryouts/ -H "Host: bc.localhost:8000"`
+- Retrieve a tryout (public):
+- `curl http://localhost:8000/api/v1/tryouts/1/ -H "Host: bc.localhost:8000"`
 

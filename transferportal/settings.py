@@ -33,6 +33,7 @@ INSTALLED_APPS = [
     "accounts.apps.AccountsConfig",
     "organizations",
     "regions",
+    "tryouts",
 ]
 
 MIDDLEWARE = [

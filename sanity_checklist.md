@@ -444,3 +444,102 @@ You may proceed to **Prompt #5 (Tryouts & Listings)** only if:
 * Changes are committed
 
 ---
+
+
+## Sanity Check — After Prompt #5 (Tryouts Listings, Public Read)
+
+These checks verify the public, region-scoped tryouts listing endpoints and the TryoutEvent model rules.
+
+---
+
+### 17. Migrate & Run Tests
+
+```bash
+python manage.py migrate
+python manage.py test
+````
+
+Expected:
+
+* tryouts migrations apply cleanly
+* All tests pass, including:
+
+  * region filtering for tryouts
+  * active-only behavior
+  * validation rules
+  * permissions (anonymous reads allowed; non-admin writes blocked)
+
+---
+
+### 18. Public Tryouts API (No Auth Required)
+
+#### List tryouts (BC region)
+
+```bash
+curl -i http://localhost:8000/api/v1/tryouts/ \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* Response is filtered to the current region (bc)
+* Only `is_active=true` tryouts appear
+
+#### Retrieve a tryout (BC region)
+
+```bash
+curl -i http://localhost:8000/api/v1/tryouts/1/ \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200 (if tryout exists in bc)
+
+---
+
+### 19. Cross-Region Isolation (If another Region exists)
+
+```bash
+curl -i http://localhost:8000/api/v1/tryouts/ \
+  -H "Host: on.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* No `bc` tryouts appear
+
+---
+
+### 20. Write Restrictions (Sanity)
+
+Writes should be blocked for non-admin/anonymous.
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/tryouts/ \
+  -H "Host: bc.localhost:8000" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Test Tryout","start_date":"2026-01-10","end_date":"2026-01-10","location":"Test","registration_url":"https://example.com","association":1,"region":1}'
+```
+
+Expected:
+
+* HTTP 401 (anonymous) or HTTP 403 (authenticated but non-admin)
+
+---
+
+### Exit Gate — Prompt #5
+
+You may proceed to **Prompt #6 (Player Open Status / Transfer Portal Core)** only if:
+
+* All Prompt #1–#4 checks remain green
+* All tests pass
+* `/api/v1/tryouts/` is public and region-filtered
+* Only active tryouts are returned by default
+* Changes are committed
+
+---
+
+
