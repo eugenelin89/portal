@@ -3,8 +3,9 @@
 This document defines **incremental sanity checks after each major Codex prompt**.
 
 Each section is **append-only**.
-- Earlier sections are never modified.
-- New prompts add new sections at the bottom.
+
+* Earlier sections are never modified.
+* New prompts add new sections at the bottom.
 
 This allows safe progression without rewriting prior verification steps.
 
@@ -16,16 +17,19 @@ These checks verify that the core Django + DRF + JWT foundation is correct.
 
 ### 1. Environment & Dependencies
 
-- Virtual environment is active in VS Code terminal:
+* Virtual environment is active in VS Code terminal:
+
   ```
   (venv) portal %
   ```
-- Python executable points to venv:
+* Python executable points to venv:
+
   ```bash
   which python
   # .../venv/bin/python
   ```
-- Python version is 3.10+ (tested on 3.13):
+* Python version is 3.10+ (tested on 3.13):
+
   ```bash
   python --version
   ```
@@ -40,8 +44,9 @@ python manage.py migrate
 ```
 
 Expected:
-- No install errors
-- Migrations apply cleanly
+
+* No install errors
+* Migrations apply cleanly
 
 ---
 
@@ -52,8 +57,9 @@ python manage.py runserver
 ```
 
 Expected:
-- Server starts without errors
-- No startup warnings related to DRF or auth
+
+* Server starts without errors
+* No startup warnings related to DRF or auth
 
 ---
 
@@ -64,16 +70,19 @@ curl -i http://bc.localhost:8000/api/v1/health/
 ```
 
 Expected:
-- HTTP 200
-- Body:
+
+* HTTP 200
+* Body:
+
   ```json
   {"status": "ok"}
   ```
 
 This confirms:
-- Django routing works
-- DRF is installed
-- Versioned API base is live
+
+* Django routing works
+* DRF is installed
+* Versioned API base is live
 
 > Health must remain **public (AllowAny)** even though DRF defaults to `IsAuthenticated`.
 
@@ -97,18 +106,20 @@ curl -s http://bc.localhost:8000/api/v1/protected/ \
 ```
 
 Expected:
-- Token issuance works
-- Protected endpoint returns HTTP 200
+
+* Token issuance works
+* Protected endpoint returns HTTP 200
 
 ---
 
 ### Exit Gate — Prompt #1
 
 You may proceed to **Prompt #2** only if:
-- Health endpoint returns HTTP 200
-- JWT auth works
-- Server runs cleanly
-- Changes are committed
+
+* Health endpoint returns HTTP 200
+* JWT auth works
+* Server runs cleanly
+* Changes are committed
 
 ---
 
@@ -126,8 +137,9 @@ python manage.py test
 ```
 
 Expected:
-- Region seed migration runs successfully (BC exists)
-- Middleware tests pass for `bc`, `localhost`, and alternate regions
+
+* Region seed migration runs successfully (BC exists)
+* Middleware tests pass for `bc`, `localhost`, and alternate regions
 
 ---
 
@@ -142,19 +154,22 @@ curl -i -H "Host: localhost:8000" http://localhost:8000/api/v1/health/
 ```
 
 Optional (if Region exists):
+
 ```bash
 curl -i -H "Host: on.localhost:8000" http://localhost:8000/api/v1/health/
 ```
 
 Expected:
-- All return HTTP 200
-- Region resolution is asserted via automated tests
+
+* All return HTTP 200
+* Region resolution is asserted via automated tests
 
 ---
 
 ### 8. Host / Deployment Readiness
 
 Verify `ALLOWED_HOSTS` includes `.localhost`:
+
 ```python
 ALLOWED_HOSTS = [".localhost", "localhost", "127.0.0.1"]
 ```
@@ -166,10 +181,25 @@ This ensures compatibility with subdomain routing and future deployment (e.g. `b
 ### Exit Gate — Prompt #2
 
 You may proceed to **Prompt #3 (Accounts & Roles)** only if:
-- All Prompt #1 checks remain green
-- Region middleware behaves correctly
-- Tests pass
-- Changes are committed
+
+* All Prompt #1 checks remain green
+* Region middleware behaves correctly
+* Tests pass
+* Changes are committed
+
+---
+
+## Future Prompts
+
+For each new major prompt:
+
+* Append a new **Sanity Check — After Prompt #N** section
+* Do **not** modify earlier sections
+* Treat each section as an immutable verification gate
+
+---
+
+This checklist is intentionally append-only and audit-friendly.
 
 ---
 
@@ -319,14 +349,98 @@ You may proceed to **Prompt #4 (Associations & Teams)** only if:
 
 ---
 
-## Future Prompts
+## Sanity Check — After Prompt #4 (Associations & Teams, Region-Scoped)
 
-For each new major prompt:
-- Append a new **Sanity Check — After Prompt #N** section
-- Do **not** modify earlier sections
-- Treat each section as an immutable verification gate
+These checks verify the region-scoped Association and Team domain model, admin wiring, permissions, and read-only APIs.
 
 ---
 
-This checklist is intentionally append-only and audit-friendly.
+### 13. Migrate & Run Tests
 
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+
+* organizations app migrations apply cleanly
+* All tests pass, including:
+
+  * region-based filtering for associations and teams
+  * region consistency validation (Association.region == Team.region)
+  * write restrictions for non-admin users
+
+---
+
+### 14. Admin Sanity (Manual)
+
+* Log into Django admin
+* Verify you can:
+
+  * Create an Association with a Region
+  * Create a Team linked to that Association
+* Verify validation prevents:
+
+  * Creating a Team whose Region does not match its Association’s Region
+
+---
+
+### 15. Read-only API Verification (JWT Required)
+
+#### List associations (BC region)
+
+```bash
+curl http://localhost:8000/api/v1/associations/ \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* Only associations belonging to the `bc` region are returned
+
+#### List teams (BC region)
+
+```bash
+curl http://localhost:8000/api/v1/teams/ \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* Only teams belonging to the `bc` region are returned
+
+---
+
+### 16. Cross-Region Isolation
+
+If another Region exists (e.g. `on`):
+
+```bash
+curl http://localhost:8000/api/v1/associations/ \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Host: on.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* No `bc` associations or teams appear in the response
+
+---
+
+### Exit Gate — Prompt #4
+
+You may proceed to **Prompt #5 (Tryouts & Listings)** only if:
+
+* All Prompt #1–#3 checks remain green
+* All tests pass
+* Associations and Teams are correctly filtered by region
+* Admin validation prevents cross-region mismatches
+* Changes are committed
+
+---
