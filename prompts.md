@@ -284,11 +284,29 @@ After:
 - Summarize changes
 - Show curl examples for listing associations and teams under bc.localhost
 
+
 ### Outcome
-- (Fill in after Codex completes Prompt #4)
+- Added new `organizations` app with region-scoped `Association` and `Team` models
+- Added minimal `TeamCoach` model (for future coach↔team linking)
+- Registered Association/Team (and TeamCoach if applicable) in Django admin
+- Enforced region consistency validation (Association.region must match Team.region)
+- Implemented read-only DRF endpoints:
+  - `GET /api/v1/associations/`
+  - `GET /api/v1/teams/`
+- Applied region filtering via `RegionScopedQuerysetMixin` using `request.region`
+- Added serializers + viewsets + router wiring
+- Added tests covering:
+  - region filtering / isolation
+  - region mismatch validation
+  - write restrictions (non-admin cannot create/update)
 
 ### Verification
 - `python manage.py migrate`
 - `python manage.py test`
-- `curl -i http://bc.localhost:8000/api/v1/associations/`
-- `curl -i http://bc.localhost:8000/api/v1/teams/`
+- Obtain JWT token via `/api/v1/auth/token/`
+- List associations (JWT required):
+  - `curl http://localhost:8000/api/v1/associations/ -H "Authorization: Bearer <access_token>" -H "Host: bc.localhost:8000"`
+- List teams (JWT required):
+  - `curl http://localhost:8000/api/v1/teams/ -H "Authorization: Bearer <access_token>" -H "Host: bc.localhost:8000"`
+
+
