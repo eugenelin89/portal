@@ -3,8 +3,11 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from api import views
+from organizations.views import AssociationViewSet, TeamViewSet
 
 router = DefaultRouter()
+router.register(r"associations", AssociationViewSet, basename="association")
+router.register(r"teams", TeamViewSet, basename="team")
 
 urlpatterns = [
     path("health/", views.health, name="health"),

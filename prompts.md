@@ -200,3 +200,95 @@ After:
 - `python manage.py test`
 - Obtain JWT token via `/api/v1/auth/token/`
 - Call `/api/v1/me/` with Authorization header and confirm role, approval, and region_code
+
+---
+
+## Prompt 004 — Associations & Teams (Region-Scoped)
+
+**Date:** 2025-12-28  
+**Tasks:** CODEX_TASKS.md — Task 3.1, 3.2, 3.3
+
+### Prompt
+Implement Task 3.1, 3.2, and 3.3 from CODEX_TASKS.md.
+
+Goal:
+- Introduce region-scoped Associations and Teams.
+- Establish clean ownership and permission boundaries.
+- Do NOT implement tryouts, rosters, or players-on-teams yet.
+
+Constraints:
+- Keep everything region-aware using request.region.
+- Do NOT change existing auth, region middleware, or RBAC logic.
+- Use Django ORM + DRF best practices.
+- Keep the schema minimal and MVP-safe.
+
+Requirements:
+
+1) Create a new Django app: `organizations` (or `associations` if already named in CODEX_TASKS.md).
+
+2) Models:
+
+Association
+- id
+- region (FK to Region, required)
+- name
+- short_name (optional)
+- is_active (default True)
+- created_at / updated_at
+
+Team
+- id
+- region (FK to Region, required)
+- association (FK to Association)
+- name
+- age_group (e.g. "13U", "15U")
+- level (optional: e.g. A, AA, AAA)
+- is_active (default True)
+- created_at / updated_at
+
+Rules:
+- Association.region must match Team.region
+- All queries must be region-scoped
+
+3) Admin:
+- Register Association and Team in Django admin
+- Admin can create/edit associations and teams
+- Enforce region consistency (validation)
+
+4) Permissions:
+- Only ADMIN users can create/update associations
+- Only ADMIN users can create teams
+- Coaches will be linked to teams later (do not implement now)
+
+5) API (read-only for MVP):
+- GET /api/v1/associations/
+- GET /api/v1/teams/
+
+Behavior:
+- Responses must only include objects in request.region
+- Use the RegionScopedQuerysetMixin where applicable
+
+6) Tests:
+- Associations and Teams are filtered by region
+- Cross-region data is not visible
+- Region mismatch validation is enforced
+- Non-admin users cannot create/update associations or teams
+
+Deliverables:
+- organizations app with models, migrations, admin
+- DRF serializers + viewsets (read-only)
+- Permissions enforced
+- Tests passing
+
+After:
+- Summarize changes
+- Show curl examples for listing associations and teams under bc.localhost
+
+### Outcome
+- (Fill in after Codex completes Prompt #4)
+
+### Verification
+- `python manage.py migrate`
+- `python manage.py test`
+- `curl -i http://bc.localhost:8000/api/v1/associations/`
+- `curl -i http://bc.localhost:8000/api/v1/teams/`
