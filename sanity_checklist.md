@@ -542,4 +542,91 @@ You may proceed to **Prompt #6 (Player Open Status / Transfer Portal Core)** onl
 
 ---
 
+## Sanity Check — After Prompt #6 (Player Open Status / Availability)
+
+These checks verify player Open status, restricted search, allow-list visibility, region isolation, and expiration behavior.
+
+---
+
+### 21. Migrate & Run Tests
+
+```bash
+python manage.py migrate
+python manage.py test
+````
+
+Expected:
+
+* availability migrations apply cleanly
+* All tests pass, including:
+
+  * player self access to `/availability/me/`
+  * coach search restricted to approved coaches/admin
+  * region isolation
+  * expiration filtering
+  * allow-list enforcement
+
+---
+
+### 22. Player Can Manage Own Availability
+
+1. Obtain JWT token via `/api/v1/auth/token/`
+
+2. Toggle Open status:
+
+```bash
+curl -i -X PATCH http://localhost:8000/api/v1/availability/me/ \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"is_open": true, "positions": ["OF"], "levels": ["AAA"]}'
+```
+
+Expected:
+
+* HTTP 200
+* Response shows `is_open=true`
+
+---
+
+### 23. Coach Search is Restricted
+
+Unapproved coach:
+
+* Expected HTTP 403 (or equivalent denial)
+
+Approved coach or admin:
+
+```bash
+curl -i http://localhost:8000/api/v1/availability/search/ \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* Results are filtered to:
+
+  * `is_open=true`
+  * not expired
+  * request.region only
+  * visibility allow-list rules
+
+---
+
+### 24. Exit Gate — Prompt #6
+
+You may proceed to the next MVP prompt only if:
+
+* All Prompt #1–#5 checks remain green
+* All tests pass
+* Open status is NOT publicly accessible
+* Search is restricted to ADMIN + approved COACH
+* Region + expiration + allow-list enforcement behaves correctly
+* Changes are committed
+
+---
+
+
 

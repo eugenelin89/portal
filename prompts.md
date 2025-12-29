@@ -415,3 +415,163 @@ After:
 - Retrieve a tryout (public):
 - `curl http://localhost:8000/api/v1/tryouts/1/ -H "Host: bc.localhost:8000"`
 
+---
+
+## Prompt 006 — Player Open Status (Availability) + Allow-list Visibility
+
+**Date:** 2025-12-28  
+**Tasks:** CODEX_TASKS.md — Task 6.1, 6.1A (and 6.2 if it is visibility allow-list)
+
+### Prompt
+
+Implement Task 5.1, 5.2, and 5.3 from CODEX_TASKS.md.
+
+Goal:
+- Allow players to declare themselves “Open” (available) in a controlled, private way.
+- Enable teams to discover Open players without stigma or public exposure.
+- Keep everything opt-in, region-aware, and auditable.
+
+Constraints:
+- Do NOT implement messaging or contact requests yet.
+- Do NOT expose Open status publicly.
+- Do NOT build a social feed.
+- Keep all logic MVP-safe and reversible.
+- Reuse existing AccountProfile / Player role logic.
+
+Requirements:
+
+1) Data model
+
+Create a new app: `availability`.
+
+Create model: PlayerAvailability
+- id
+- player (OneToOne to User or AccountProfile; one active record per player)
+- region (FK to Region, required)
+- is_open (boolean, default False)
+- positions (optional text or JSONField)
+- levels (optional text or JSONField)
+- expires_at (nullable datetime)
+- created_at / updated_at
+
+Rules:
+- Only users with role = PLAYER may have availability records.
+- Availability.region must match request.region.
+- Only ONE availability record per player.
+- Expired availability is treated as not open.
+
+2) Admin
+- Register PlayerAvailability in Django admin
+- Admin can view but not arbitrarily toggle player openness
+
+3) API
+
+Endpoint: `/api/v1/availability/me/`
+
+Methods:
+- GET: return the player’s own availability status
+- PATCH: allow player to:
+  - toggle is_open
+  - update positions, levels, expires_at
+- Only the authenticated player can access their own record
+
+Endpoint: `/api/v1/availability/search/`
+
+Behavior:
+- Accessible ONLY to:
+  - ADMIN users
+  - Approved COACH users
+- Returns players where:
+  - is_open = True
+  - not expired
+  - region == request.region
+- Do NOT expose player email by default
+- Include minimal safe fields:
+  - player id
+  - positions
+  - levels
+  - age group (if available)
+  - region_code
+
+4) Permissions
+- Enforce role-based access:
+  - Players → self only
+  - Coaches → search only (if approved)
+  - Admin → everything
+- Anonymous users have NO access
+
+5) Tests
+- Player can toggle own Open status
+- Player cannot view other players’ availability
+- Coach cannot view availability unless approved
+- Approved coach can search Open players
+- Expired availability is excluded
+- Region filtering enforced
+
+Deliverables:
+- availability app with model + migrations
+- admin registration
+- serializers + views
+- permissions
+- tests passing
+
+After:
+- Summarize changes
+- Show curl examples for:
+  - Player toggling Open
+  - Coach searching Open players
+
+--- 
+### Codex
+
+I checked codex_tasks.md and Task 5 is PlayerProfile (5.1/5.1A/5.2), while your request is for Open status/availability, which matches Task 6.1 and 6.1A (and 6.2 for allowed teams). Task 5.3 doesn’t exist in CODEX_TASKS.
+
+Do you want me to proceed with the availability work as Task 6.1/6.1A (and possibly 6.2), or should I implement Task 5 (PlayerProfile) instead?
+---
+
+### Prompt
+Proceed with the “Open status / availability” work.
+
+Implement CODEX_TASKS.md:
+- Task 6.1 and Task 6.1A for Player Availability (“Open” status).
+- Also implement Task 6.2 ONLY if it is specifically about visibility controls (allowed teams / allow-list). If 6.2 is something else, skip it.
+
+Do NOT implement Task 5 (PlayerProfile) yet.
+
+Keep it MVP-safe:
+- Open status must not be public.
+- Search is restricted to ADMIN and Approved COACH only.
+- Region filtering enforced.
+- Expiration support.
+- Provide /api/v1/availability/me/ (GET/PATCH) and /api/v1/availability/search/ (GET).
+- Add tests for permissions, expiration, and region isolation.
+
+After implementing, summarize changes and provide curl examples.
+
+### Requirements summary:
+- Add `availability` app + `PlayerAvailability` model (region-aware, expiration-aware).
+- Allow-list visibility controls (teams allowed to see a player’s Open status).
+- API:
+  - `GET/PATCH /api/v1/availability/me/` (player manages own status)
+  - `GET /api/v1/availability/search/` (restricted to ADMIN + approved COACH)
+- Enforce: region isolation, expiration filtering, and team allow-list enforcement.
+- Add tests for permissions, expiration, and region isolation.
+
+### Outcome
+- Added `availability` app for player Open status with region-aware access and allow-listed visibility controls
+- `/api/v1/availability/me/` allows players to view/update their own Open status
+- `/api/v1/availability/search/` restricted to ADMIN + approved COACH, filtered by region + expiration, and enforces team allow-list
+- Admin is view-only for availability records
+- Added tests for permissions, expiration, and region isolation
+
+### Verification
+- `python manage.py migrate`
+- `python manage.py test`
+- Player toggles Open:
+  - `curl -X PATCH http://localhost:8000/api/v1/availability/me/ -H "Authorization: Bearer <access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"is_open": true, "positions": ["OF"], "levels": ["AAA"]}'`
+- Approved coach searches Open players:
+  - `curl http://localhost:8000/api/v1/availability/search/ -H "Authorization: Bearer <access_token>" -H "Host: bc.localhost:8000"`
+
+
+  
+

@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from api import views
+from availability import views as availability_views
 from organizations.views import AssociationViewSet, TeamViewSet
 from tryouts.views import TryoutEventViewSet
 
@@ -14,6 +15,8 @@ router.register(r"tryouts", TryoutEventViewSet, basename="tryout")
 urlpatterns = [
     path("health/", views.health, name="health"),
     path("me/", views.me, name="me"),
+    path("availability/me/", availability_views.availability_me, name="availability_me"),
+    path("availability/search/", availability_views.availability_search, name="availability_search"),
     path("protected/", views.protected, name="protected"),
     path("auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
