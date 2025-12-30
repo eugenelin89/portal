@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.test import TestCase
 from rest_framework.test import APIClient
 
+from accounts.models import AccountProfile
 from organizations.models import Association, Team
 from regions.models import Region
 from tryouts.models import TryoutEvent
@@ -72,6 +73,30 @@ class TryoutApiTests(TestCase):
         assoc_bc = Association.objects.create(region=bc, name="BC Assoc")
         user = User.objects.create_user(username="viewer", password="testpass")
         self.client.force_authenticate(user=user)
+
+        response = self.client.post(
+            "/api/v1/tryouts/",
+            {
+                "region": bc.id,
+                "association": assoc_bc.id,
+                "name": "Nope",
+                "start_date": "2025-01-10",
+                "end_date": "2025-01-11",
+                "location": "Field",
+                "registration_url": "https://example.com",
+            },
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 403)
+
+    def test_coach_cannot_create_tryout(self):
+        bc = Region.objects.get(code="bc")
+        assoc_bc = Association.objects.create(region=bc, name="BC Assoc")
+        coach = User.objects.create_user(username="coach1", password="testpass")
+        coach.profile.role = AccountProfile.Roles.COACH
+        coach.profile.is_coach_approved = True
+        coach.profile.save()
+        self.client.force_authenticate(user=coach)
 
         response = self.client.post(
             "/api/v1/tryouts/",

@@ -49,3 +49,8 @@ class PlayerProfileApiTests(TestCase):
     def test_profile_not_listable(self):
         response = self.client.get("/api/v1/profiles/")
         self.assertEqual(response.status_code, 404)
+
+    def test_no_other_profile_endpoint(self):
+        self.client.force_authenticate(user=self.player)
+        response = self.client.get("/api/v1/profile/999/")
+        self.assertEqual(response.status_code, 404)

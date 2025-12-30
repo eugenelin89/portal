@@ -192,3 +192,69 @@ class ContactRequestApiTests(TestCase):
         response = self.client.get("/api/v1/open-players/", HTTP_HOST="bc.localhost:8000")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
+
+    def test_open_players_respects_allow_list(self):
+        availability = PlayerAvailability.objects.create(
+            player=self.player,
+            region=self.bc,
+            is_open=True,
+        )
+        other_team = Team.objects.create(
+            region=self.bc,
+            association=self.assoc_bc,
+            name="Other Team",
+            age_group="13U",
+        )
+        availability.allowed_teams.add(other_team)
+
+        self.client.force_authenticate(user=self.coach)
+        response = self.client.get("/api/v1/open-players/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_open_players_region_isolation(self):
+        availability = PlayerAvailability.objects.create(
+            player=self.player,
+            region=self.bc,
+            is_open=True,
+        )
+        availability.allowed_teams.add(self.team_bc)
+
+        self.client.force_authenticate(user=self.coach)
+        response = self.client.get("/api/v1/open-players/", HTTP_HOST="on.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_contact_requests_list_region_isolation(self):
+        availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
+        availability.allowed_teams.add(self.team_bc)
+        ContactRequest.objects.create(
+            player=self.player,
+            requesting_team=self.team_bc,
+            requested_by=self.coach,
+            region=self.bc,
+        )
+
+        self.client.force_authenticate(user=self.coach)
+        response = self.client.get("/api/v1/contact-requests/", HTTP_HOST="on.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_contact_request_respond_region_isolation(self):
+        availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
+        availability.allowed_teams.add(self.team_bc)
+        contact_request = ContactRequest.objects.create(
+            player=self.player,
+            requesting_team=self.team_bc,
+            requested_by=self.coach,
+            region=self.bc,
+        )
+
+        self.client.force_authenticate(user=self.player)
+        response = self.client.post(
+            f"/api/v1/contact-requests/{contact_request.id}/respond/",
+            {"status": "approved"},
+            format="json",
+            HTTP_HOST="on.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 404)
