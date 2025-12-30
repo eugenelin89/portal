@@ -945,3 +945,109 @@ You may proceed only if:
 * Contact requests are blocked for committed players
 * Audit logging (if enabled) is complete and accurate
 * Changes are committed
+
+---
+
+## Sanity Check — After Prompt #10 (Seed Demo Data)
+
+These checks verify the demo seed command and minimal demo data.
+
+---
+
+### 41. Migrate & Seed
+
+```bash
+python manage.py migrate
+python manage.py seed_demo
+```
+
+Expected:
+
+* Seed command runs without errors
+* Output includes demo credentials
+
+---
+
+### 42. Run Tests
+
+```bash
+python manage.py test
+```
+
+Expected:
+
+* All tests pass after seeding
+
+---
+
+### 43. Demo Tryouts (Public)
+
+```bash
+curl -i http://localhost:8000/api/v1/tryouts/ \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* At least one tryout appears
+
+---
+
+### 44. Demo Open Players (Coach)
+
+```bash
+curl -i http://localhost:8000/api/v1/open-players/ \
+  -H "Authorization: Bearer <coach_access_token>" \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* Player1 appears in results
+
+---
+
+### 45. Demo Contact Request
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/contact-requests/ \
+  -H "Authorization: Bearer <coach_access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"player_id":<player_id>,"requesting_team_id":<team_id>,"message":"We would like to connect."}'
+```
+
+Expected:
+
+* HTTP 201
+* status = PENDING
+
+---
+
+### 46. Demo Contact Response (Player)
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/contact-requests/<id>/respond/ \
+  -H "Authorization: Bearer <player_access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"status":"approved"}'
+```
+
+Expected:
+
+* HTTP 200
+* status updated, responded_at populated
+
+---
+
+### Exit Gate — Prompt #10
+
+You may proceed only if:
+
+* All Prompt #1–#9 checks remain green
+* Seed command runs cleanly on an empty DB
+* Demo tryouts, open players, and contact requests work
+* Changes are committed
