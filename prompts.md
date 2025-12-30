@@ -961,3 +961,112 @@ Open players search (coach/admin):
 
 Contact request blocked:
 - `curl -X POST http://localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'`
+
+
+---
+
+## Prompt 010 — Seed Script / Fixtures (Minimal Demo Data)
+
+**Date:** 2025-12-30  
+**Tasks:** CODEX_TASKS.md — Task 10.1
+
+### Prompt
+Implement CODEX_TASKS.md Task 10.1 — Seed Script / Fixtures (Minimal Demo Data).
+
+Goal:
+- Make it possible to set up a clean demo environment from an empty DB with one command.
+- Seed enough data to demonstrate the MVP loop without manual admin clicking.
+
+Constraints:
+- Keep it minimal and deterministic (no random generation).
+- Must be safe to run multiple times (idempotent).
+- Do not change existing models/permissions unless absolutely necessary.
+- Keep region-aware data scoped to BC region (code='bc').
+
+Seed data required:
+1) Region
+- Ensure Region(code='bc', name='British Columbia') exists (should already via migration; verify).
+
+2) Associations / Teams
+- Create 1 Association in BC (e.g. "Vancouver Minor Baseball", short_name="VMB").
+- Create 3 Teams in BC under that association, e.g.:
+  - "VMB 13U AAA" (age_group="13U", level="AAA")
+  - "VMB 13U AA" (age_group="13U", level="AA")
+  - "VMB 15U AAA" (age_group="15U", level="AAA")
+
+3) Users + roles
+Create 3 users with known credentials (document them in output):
+- Admin user (superuser):
+  - username: admin
+  - email: admin@example.com
+  - password: adminpass123
+- Coach user (approved coach role):
+  - username: coach1
+  - email: coach1@example.com
+  - password: coachpass123
+  - AccountProfile role=COACH, is_coach_approved=True
+- Player user (player role):
+  - username: player1
+  - email: player1@example.com
+  - password: playerpass123
+  - AccountProfile role=PLAYER
+
+4) Coach-team membership
+- Link coach1 to one of the teams (e.g. VMB 13U AAA) via TeamCoach.
+
+5) Player profile + availability
+- Create PlayerProfile for player1 with:
+  - display_name "J. Player"
+  - birth_year 2011
+  - positions ["OF"]
+  - bats "R", throws "R"
+- Create availability for player1 in region BC:
+  - is_open = True
+  - allow-list visibility includes the coach’s team (the one coach1 belongs to)
+  - expiration either null or in the future
+
+6) Tryout(s)
+- Create 1 TryoutEvent for the coach’s team in BC with:
+  - name "13U AAA Tryouts"
+  - start_date/end_date within next 2 weeks
+  - registration_url set to a placeholder URL
+  - is_active = True
+
+7) Contact request (optional but helpful)
+- Optionally create a pending ContactRequest from coach’s team to player1,
+  OR provide documented curl steps to create it during demo.
+
+Implementation approach:
+- Add a management command: `python manage.py seed_demo`
+  OR a deterministic script under `scripts/seed_demo.py` plus documented command.
+- Prefer management command (standard Django).
+
+Acceptance checks:
+- From a clean DB:
+  - `python manage.py migrate`
+  - `python manage.py seed_demo`
+  - `python manage.py test` still passes
+- API demo checks:
+  - Public tryouts list works for bc.localhost
+  - Coach can search open players and see player1
+  - Coach can create contact request to player1 (if not pre-seeded)
+  - Player can approve/decline the request
+
+Deliverables:
+- Seed command/script + documentation (README snippet or in SETUP.md)
+- Idempotent behavior (running twice does not duplicate records)
+- Short summary of created objects + credentials printed at the end of the seed command
+
+### Outcome
+- Added `python manage.py seed_demo` management command
+- Seeds BC region, one association, three teams, demo users, and a tryout
+- Creates player profile + availability allow-listed to coach team
+- Idempotent (safe to run multiple times)
+
+### Verification
+- `python manage.py migrate`
+- `python manage.py seed_demo`
+- `python manage.py test`
+
+Demo:
+- `curl -X POST http://bc.localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -d '{"player_id":<player_id>,"requesting_team_id":<team_id>,"message":"We would like to connect."}'`
