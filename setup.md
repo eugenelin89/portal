@@ -130,6 +130,22 @@ Then open:
 
 ---
 
+## 10A. Seed Demo Data (Optional)
+
+Use the demo seed command to create a minimal, deterministic dataset:
+
+```bash
+python manage.py seed_demo
+```
+
+This creates:
+- BC region, one association, and three teams
+- Admin, coach, and player demo users (credentials printed)
+- Player profile + availability (open and allow-listed)
+- One tryout event
+
+---
+
 ## 11. First-Time Setup (Admin)
 After logging into the admin panel:
 1. Create a **Region** (code: `bc`)
@@ -161,4 +177,3 @@ After logging into the admin panel:
 ---
 
 Happy building ⚾🚀
-
