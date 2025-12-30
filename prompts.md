@@ -860,3 +860,104 @@ PATCH profile:
 
 Privacy check:
 - `curl -i http://localhost:8000/api/v1/profiles/` (expected 404)
+
+
+---
+
+## Prompt 009 — Committed Status (API Only)
+
+**Date:** 2025-12-30  
+**Tasks:** CODEX_TASKS.md — Task 8.1
+
+### Prompt
+Implement CODEX_TASKS.md Task 8.1 (Committed Status).
+
+Scope: API-first (no web UI for now).
+
+Goal:
+- Allow a player to mark themselves "Committed".
+- A committed player must not appear in any Open player search results.
+- Committed should effectively end recruiting visibility (MVP safety).
+
+Constraints:
+- Keep it minimal and MVP-safe.
+- Do NOT change region middleware.
+- Do NOT add public endpoints.
+- Preserve privacy rules and region isolation.
+
+Design choice (pick the simplest consistent approach):
+- Option A (preferred): Add `is_committed` boolean + `committed_at` to the existing availability model (PlayerAvailability / AvailabilityStatus).
+- OR Option B: Add a separate small model if needed.
+Prefer Option A unless there is a strong reason not to.
+
+Requirements:
+
+1) Data model
+- Add fields:
+  - is_committed (boolean, default False)
+  - committed_at (nullable datetime)
+- Rules:
+  - If is_committed == True:
+    - is_open must be treated as False (either force-set or excluded in queries)
+    - availability search endpoints must exclude the player
+    - contact request creation must be blocked for that player (even if an old record shows is_open True)
+  - Committed is controlled by the player only (self).
+
+2) API
+Extend `/api/v1/availability/me/`:
+- PATCH supports setting:
+  - is_committed (true/false)
+  - When set true: set committed_at = now, set is_open = false
+  - When set false: committed_at cleared (optional) and player may manually set is_open later
+Keep permissions self-only (player).
+
+3) Enforcement updates
+- Update `GET /api/v1/availability/search/` and/or `GET /api/v1/open-players/` (whichever exists) to exclude committed players.
+- Update `POST /api/v1/contact-requests/` to block requests to committed players.
+
+4) Audit logging (if present)
+- If you already have AuditLog in contacts, add a new action:
+  - COMMITTED_SET (and optionally COMMITTED_CLEARED)
+- Log when player commits/uncommits.
+
+5) Tests
+Add tests to verify:
+- Player can set is_committed via `/availability/me/`
+- Committing forces is_open false
+- Committed players do not appear in open player search endpoints
+- Contact request creation fails for committed players
+- Region isolation remains enforced
+- (If audit logging added) audit entry is created
+
+Deliverables:
+- migration(s)
+- updated serializers/views/permissions as needed
+- tests passing
+
+After:
+- Summarize changes
+- Provide curl examples for:
+  - player committing via PATCH /api/v1/availability/me/
+  - coach open players search excluding committed
+  - coach contact request blocked for committed player
+
+### Outcome
+- Added `is_committed` and `committed_at` to PlayerAvailability
+- Committing forces `is_open` false and logs COMMITTED_SET/COMMITTED_CLEARED
+- Open player searches exclude committed players
+- Contact requests to committed players are blocked
+- Tests added for commit behavior and exclusions
+
+### Verification
+- `python manage.py migrate`
+- `python manage.py test`
+
+
+Commit:
+- `curl -X PATCH http://localhost:8000/api/v1/availability/me/ -H "Authorization: Bearer <player_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"is_committed": true}'`
+
+Open players search (coach/admin):
+- `curl http://localhost:8000/api/v1/open-players/ -H "Authorization: Bearer <coach_access_token>" -H "Host: bc.localhost:8000"`
+
+Contact request blocked:
+- `curl -X POST http://localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'`
