@@ -1051,3 +1051,114 @@ You may proceed only if:
 * Seed command runs cleanly on an empty DB
 * Demo tryouts, open players, and contact requests work
 * Changes are committed
+
+
+---
+## Sanity Check — After Prompt #11 (Permission & Isolation Hardening)
+
+These checks verify that **no cross-role, cross-team, or cross-region data leakage** is possible.
+
+---
+
+### 47. Migrate & Run Full Test Suite
+
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+
+* All tests pass
+* No permission or isolation regressions
+
+---
+
+### 48. Coach / Team Isolation
+
+Using a coach assigned to **Team A**:
+
+Attempt to create a contact request for **Team B**.
+
+Expected:
+
+* HTTP 403 or 400
+* Clear error indicating team permission violation
+
+---
+
+### 49. Open Player Visibility Enforcement
+
+Using an approved coach:
+
+```bash
+curl -i http://localhost:8000/api/v1/open-players/ \
+  -H "Authorization: Bearer <coach_access_token>" \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* ONLY players who explicitly allow the coach’s team appear
+
+---
+
+### 50. Player Privacy Enforcement
+
+Using Player A token:
+
+* Attempt to fetch Player B profile
+* Attempt to fetch Player B availability
+
+Expected:
+
+* HTTP 403 or 404
+* No data leakage
+
+---
+
+### 51. Region Isolation (Hard Block)
+
+Create data under `bc.localhost`, then attempt access under another region:
+
+```bash
+curl -i http://localhost:8000/api/v1/open-players/ \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Host: on.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200 with empty result OR HTTP 403
+* No BC data visible
+
+---
+
+### 52. Admin Still Region-Bound
+
+Using admin token:
+
+* Access BC data under `on.localhost`
+
+Expected:
+
+* Access denied OR empty
+* Admin does NOT bypass region scoping
+
+---
+
+### Exit Gate — Prompt #11
+
+You may proceed only if:
+
+* All tests pass
+* No cross-role access is possible
+* No cross-team access is possible
+* No cross-region access is possible
+* Player data is private by default
+* Changes are committed
+
+---
+
+**After Prompt #11, the MVP is considered permission-complete and security-stable.**

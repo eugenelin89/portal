@@ -563,3 +563,9 @@ check_http 201 http://localhost:8000/api/v1/contact-requests/ \
 
 echo
 echo "All sanity checks passed."
+
+print_step 34 "Isolation Tests (Suite)" "Prompt #11"
+check_command_success "permission/isolation tests pass" python manage.py test
+
+echo
+echo "All sanity checks passed (including Prompt #11)."

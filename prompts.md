@@ -1070,3 +1070,95 @@ Deliverables:
 
 Demo:
 - `curl -X POST http://bc.localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -d '{"player_id":<player_id>,"requesting_team_id":<team_id>,"message":"We would like to connect."}'`
+
+---
+
+## Prompt 011 — Permission & Isolation Hardening (No New Features)
+
+**Date:** 2025-12-31
+**Tasks:** CODEX_TASKS.md — Task 11.1
+
+### Prompt
+
+Implement CODEX_TASKS.md **Task 11.1 — Permission / Isolation Tests & Hardening**.
+
+This prompt is **hardening-only**. Do **not** introduce new features, models, or endpoints unless required to fix a failing test.
+
+Goal:
+
+* Ensure strict **cross-region**, **cross-team**, and **cross-role** isolation.
+* Treat all permission leaks as **MVP blockers**.
+
+Scope:
+
+* API-first only (no Web UI work).
+* Focus on permissions, query filtering, and negative tests.
+
+Requirements:
+
+1. Coach / Team Isolation
+
+* A coach must NOT be able to:
+
+  * create contact requests for teams they are not assigned to
+  * view Open players unless allowed by availability allow-list
+* Enforce at both:
+
+  * serializer / queryset level
+  * permission class level
+
+2. Region Isolation
+
+* No object created or queried under one region may be:
+
+  * listed
+  * retrieved
+  * mutated
+    from another region subdomain
+* Add explicit tests for cross-region leakage attempts
+
+3. Player Privacy
+
+* Players must NOT:
+
+  * view other players’ profiles
+  * view other players’ availability
+  * view contact requests not addressed to them
+
+4. Admin Scope
+
+* Admins may bypass role restrictions but:
+
+  * MUST still respect region isolation
+
+5. Tests (Required)
+   Add tests that assert **denial**, not just success:
+
+* Coach blocked from unassigned team actions
+* Coach blocked from Open players not allow-listed
+* Player blocked from accessing other players’ data
+* Cross-region access returns empty results or 403
+
+6. No Regressions
+
+* All existing tests must continue to pass
+* Seed demo data must still work
+
+Deliverables:
+
+* Additional permission/isolation tests
+* Any minimal fixes required to pass those tests
+
+After:
+
+* Summarize what was hardened
+* Explicitly list what is now impossible to do (security guarantees)
+
+---
+
+### Expected Outcome
+
+* Zero cross-team data leaks
+* Zero cross-region data leaks
+* Strict privacy-by-default for players
+* MVP considered **security-complete** after this prompt
