@@ -12,6 +12,9 @@ This allows safe progression without rewriting prior verification steps.
 
 ---
 
+When using `scripts/run_sanity_checks.sh`, the script prints which sanity check
+it is running to match the sections below.
+
 ## Sanity Check — After Prompt #1 (Django + DRF + JWT Bootstrap)
 
 These checks verify that the core Django + DRF + JWT foundation is correct.
@@ -847,5 +850,4 @@ You may proceed only if:
 * Changes are committed
 
 ---
-
 
