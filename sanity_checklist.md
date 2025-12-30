@@ -629,4 +629,127 @@ You may proceed to the next MVP prompt only if:
 ---
 
 
+## Sanity Check — After Prompt #7 (Contact Requests + Audit Logging)
+
+These checks verify the end-to-end contact request flow, permissions, audit logging, and region isolation.
+
+---
+
+### 25. Migrate & Run Tests
+
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+
+* contacts migrations apply cleanly
+* All tests pass, including:
+
+  * duplicate pending request prevention
+  * non-open player blocked
+  * coach approval + team membership enforcement
+  * player-only approve/decline
+  * audit log entries created
+
+---
+
+### 26. Coach Creates Contact Request
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/contact-requests/ \
+  -H "Authorization: Bearer <coach_access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'
+```
+
+Expected:
+
+* HTTP 201
+* status = `PENDING`
+* Player contact details NOT exposed
+
+---
+
+### 27. Duplicate Pending Request Blocked
+
+Repeat the same POST request.
+
+Expected:
+
+* HTTP 400 or 409
+* Error indicating duplicate pending request
+
+---
+
+### 28. Player Responds to Contact Request
+
+Approve:
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/contact-requests/<id>/respond/ \
+  -H "Authorization: Bearer <player_access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"status":"approved"}'
+```
+
+Decline:
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/contact-requests/<id>/respond/ \
+  -H "Authorization: Bearer <player_access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"status":"declined"}'
+```
+
+Expected:
+
+* HTTP 200
+* status updated
+* responded_at populated
+
+---
+
+### 29. Audit Log Verification
+
+In Django admin:
+
+* Verify AuditLog entries exist for:
+
+  * CONTACT_REQUEST_CREATED
+  * CONTACT_REQUEST_APPROVED or CONTACT_REQUEST_DECLINED
+* Entries include actor, target, region, timestamp
+
+---
+
+### 30. Region Isolation
+
+* Create request under `bc.localhost`
+* Attempt access under a different region host
+
+Expected:
+
+* Request not visible
+* Access denied or empty result
+
+---
+
+### Exit Gate — Prompt #7
+
+You may proceed only if:
+
+* All Prompt #1–#6 checks remain green
+* Contact requests are fully permission-gated
+* Player consent is enforced
+* Audit logging is complete and accurate
+* Region isolation is intact
+* Changes are committed
+
+---
+
+
 

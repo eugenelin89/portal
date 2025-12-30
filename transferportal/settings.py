@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     "api",
     "accounts.apps.AccountsConfig",
     "availability",
+    "contacts",
     "organizations",
     "regions",
     "tryouts",

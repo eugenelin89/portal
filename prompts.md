@@ -573,5 +573,184 @@ After implementing, summarize changes and provide curl examples.
   - `curl http://localhost:8000/api/v1/availability/search/ -H "Authorization: Bearer <access_token>" -H "Host: bc.localhost:8000"`
 
 
-  
+  ---
 
+## Prompt 007 — Contact Requests + Audit Logging (API Only)
+
+
+**Date:** 2025-12-29
+**Tasks:** CODEX_TASKS.md — Task 7.1, 7.1A, 7.2A, 9.1
+
+## Prompt 007 — Player Open Status (Availability) + Allow-list Visibility
+
+### Prompt
+
+  Implement Task 7.1, 7.2, and 7.3 from CODEX_TASKS.md.
+
+Goal:
+- Allow teams/coaches to request contact with Open players.
+- Allow players to approve or decline contact.
+- Record all actions in an audit log to prevent abuse or disputes.
+
+Constraints:
+- Keep everything region-aware using request.region.
+- Do NOT implement chat or messaging yet.
+- Do NOT expose player contact details until approval.
+- Keep the system auditable and privacy-safe.
+
+Requirements:
+
+1) Data models
+
+Create a new app: `contacts`.
+
+ContactRequest
+- id
+- player (FK to User / AccountProfile)
+- requesting_team (FK to Team)
+- requested_by (FK to User — coach)
+- region (FK to Region)
+- status (PENDING, APPROVED, DECLINED)
+- message (optional short text)
+- created_at
+- responded_at (nullable)
+
+Rules:
+- Only ONE active PENDING request per (player, team).
+- ContactRequest.region must match request.region.
+- Coach must be approved and associated with requesting_team.
+- Player must currently be Open (availability.is_open == True).
+
+AuditLog
+- id
+- actor (User)
+- action (string / enum)
+- target_type (string)
+- target_id
+- region (FK to Region)
+- metadata (JSONField, optional)
+- created_at
+
+Actions to log:
+- CONTACT_REQUEST_CREATED
+- CONTACT_REQUEST_APPROVED
+- CONTACT_REQUEST_DECLINED
+
+2) Admin
+- Register ContactRequest and AuditLog in Django admin (read-only for AuditLog).
+- Admins can view all activity.
+
+3) API
+
+Endpoint: `/api/v1/contact-requests/`
+
+Methods:
+- POST (coach/admin only):
+  - Create a contact request for an Open player
+- GET:
+  - Player: list requests addressed to them
+  - Coach/Admin: list requests they created
+
+Endpoint: `/api/v1/contact-requests/<id>/respond/`
+
+Methods:
+- POST (player only):
+  - Approve or decline a contact request
+
+Behavior:
+- Player contact info is NOT returned until approved.
+- Declined requests cannot be re-opened.
+- Approved requests expose minimal contact metadata only.
+
+4) Permissions
+- Only approved coaches or admins can create requests.
+- Only the target player can approve/decline.
+- Anonymous users have no access.
+- Region isolation enforced everywhere.
+
+5) Tests
+- Coach cannot request contact for a non-open player.
+- Duplicate pending requests are blocked.
+- Player can approve/decline only their own requests.
+- AuditLog entries created for each action.
+- Region isolation enforced.
+
+Deliverables:
+- contacts app with models + migrations
+- admin registration
+- serializers + views
+- permissions
+- audit logging
+- tests passing
+
+After:
+- Summarize changes
+- Show curl examples for:
+  - Coach creating a request
+  - Player approving/declining
+
+---
+
+### Codex
+
+I checked codex_tasks.md: Task 7.2 and 7.3 are web UI tasks (coach send request UI, player accept/decline UI), while the API work is in Task 7.1A and 7.2A. Your request includes API endpoints + audit logging, which maps to 7.1/7.1A/7.2A/9.1.
+
+Do you want me to:
+
+Implement the data model + API + audit logging only (skip UI for now), or
+Also build the web UI flows for coaches/players (Task 7.2 and 7.3)?
+Tell me which option to proceed with.
+
+---
+
+### Prompt
+Proceed with data model + API + audit logging only. Skip all web UI work for now.
+
+Implement CODEX_TASKS.md:
+- Task 7.1
+- Task 7.1A
+- Task 7.2A
+- Task 9.1 (AuditLog)
+
+Do NOT implement:
+- Task 7.2 (coach UI)
+- Task 7.3 (player UI)
+
+Scope requirements:
+- Region-aware everywhere (request.region / request.region_code)
+- Coaches must be approved and linked to the requesting team (use existing TeamCoach if present)
+- Player must be Open to receive a request (use availability app)
+- Prevent duplicate pending requests per (player, team)
+- Provide endpoints:
+  - POST/GET /api/v1/contact-requests/
+  - POST /api/v1/contact-requests/<id>/respond/
+- Do not expose player contact details until approved
+- Write AuditLog entries for create/approve/decline
+
+Add tests for:
+- non-open player blocked
+- duplicate pending blocked
+- permissions and region isolation
+- audit log entries created
+
+After implementing, summarize changes and provide curl examples.
+
+### Outcome
+- Added `contacts` app implementing the contact request workflow
+- Coaches (approved and team-linked) can create contact requests for Open players
+- Players can approve or decline requests via API
+- Duplicate pending requests per (player, team) are blocked
+- Player contact details remain hidden until approval
+- Added `AuditLog` model with entries for create/approve/decline actions
+- Region isolation enforced across all contact request operations
+- Fixed conditional unique constraint to safely reference pending status
+- All tests pass after fix
+
+
+### Verification
+- `python manage.py migrate`
+- `python manage.py test`
+- Coach creates a request:
+- `curl -X POST http://localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'`
+- Player responds:
+- `curl -X POST http://localhost:8000/api/v1/contact-requests/42/respond/ -H "Authorization: Bearer <player_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"status":"approved"}'`
