@@ -14,7 +14,11 @@ report() {
 
 print_step() {
   echo
-  echo "Step $1: $2"
+  if [[ -n "${3:-}" ]]; then
+    echo "Step $1 ($3): $2"
+  else
+    echo "Step $1: $2"
+  fi
 }
 
 check_http() {
@@ -59,6 +63,31 @@ check_command_success() {
   fi
 }
 
+check_json_empty_array() {
+  local expected="$1"
+  local result
+  result=$(python - <<'PY'
+import json
+import os
+
+path = os.environ["TMP_BODY_PATH"]
+with open(path, "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+
+if isinstance(payload, list) and len(payload) == 0:
+    print("yes")
+else:
+    print("no")
+PY
+  )
+  if [[ "$result" == "yes" ]]; then
+    report "$expected" "empty list" "yes"
+  else
+    report "$expected" "non-empty list" "no"
+    exit 1
+  fi
+}
+
 cleanup() {
   if [[ -n "${SERVER_PID:-}" ]] && kill -0 "$SERVER_PID" >/dev/null 2>&1; then
     kill "$SERVER_PID"
@@ -67,7 +96,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-print_step 1 "Environment & Dependencies"
+print_step 1 "Environment & Dependencies" "Prompt #1"
 python_path=$(command -v python || true)
 python_version=$(python --version 2>&1 || true)
 expected="python on PATH and version >= 3.10"
@@ -88,14 +117,14 @@ else
   exit 1
 fi
 
-print_step 2 "Install & Migrate"
+print_step 2 "Install & Migrate" "Prompt #1"
 check_command_success "Dependencies installed and migrations applied" \
   bash -c "python -m pip install -r requirements.txt && python manage.py migrate"
 
-print_step 3 "Run Tests"
+print_step 3 "Run Tests" "Prompt #1"
 check_command_success "All tests pass" python manage.py test
 
-print_step 4 "Create Sanity Fixtures"
+print_step 4 "Create Sanity Fixtures" "Prompt #1"
 expected="sanity users, regions, orgs, teams, tryout, availability are ready"
 fixture_exports=$(python - <<'PY'
 import os
@@ -186,6 +215,8 @@ availability, _ = PlayerAvailability.objects.get_or_create(
 )
 availability.region = bc
 availability.is_open = True
+availability.is_committed = False
+availability.committed_at = None
 availability.expires_at = None
 availability.save()
 availability.allowed_teams.set([team_bc])
@@ -193,7 +224,6 @@ availability.allowed_teams.set([team_bc])
 ContactRequest.objects.filter(
     player=player,
     requesting_team=team_bc,
-    status=ContactRequest.Status.PENDING,
 ).delete()
 
 print(f"SANITY_ADMIN_USERNAME={ADMIN_USERNAME}")
@@ -216,7 +246,7 @@ else
   exit 1
 fi
 
-print_step 5 "Start Server + Health/Auth Checks"
+print_step 5 "Start Server + Health/Auth Checks" "Prompt #1"
 expected="server starts and responds to health check"
 echo "Expected: $expected"
 python manage.py runserver 8000 >/tmp/portal_runserver.log 2>&1 &
@@ -235,10 +265,10 @@ for i in {1..20}; do
 done
 report "$expected" "server started" "yes"
 
-print_step 6 "Health Endpoint"
+print_step 6 "Health Endpoint" "Prompt #1"
 check_http 200 http://bc.localhost:8000/api/v1/health/
 
-print_step 7 "Region / Subdomain Verification"
+print_step 7 "Region / Subdomain Verification" "Prompt #2"
 bc_code=$(curl -s -o "$TMP_BODY" -w "%{http_code}" -H "Host: bc.localhost:8000" http://localhost:8000/api/v1/health/)
 local_code=$(curl -s -o "$TMP_BODY" -w "%{http_code}" -H "Host: localhost:8000" http://localhost:8000/api/v1/health/)
 on_code=$(curl -s -o "$TMP_BODY" -w "%{http_code}" -H "Host: on.localhost:8000" http://localhost:8000/api/v1/health/)
@@ -251,7 +281,7 @@ else
   exit 1
 fi
 
-print_step 8 "ALLOWED_HOSTS"
+print_step 8 "ALLOWED_HOSTS" "Prompt #2"
 allowed_hosts=$(python - <<'PY'
 from transferportal.settings import ALLOWED_HOSTS
 print(",".join(ALLOWED_HOSTS))
@@ -308,7 +338,7 @@ if [[ -z "$SANITY_NON_PLAYER_TOKEN" ]]; then
   SANITY_NON_PLAYER_TOKEN="$SANITY_COACH_TOKEN"
 fi
 
-print_step 9 "JWT Protected Endpoint"
+print_step 9 "JWT Protected Endpoint" "Prompt #1"
 if [[ -n "$SANITY_ACCESS_TOKEN" ]]; then
   check_http 200 http://bc.localhost:8000/api/v1/protected/ \
     -H "Authorization: Bearer $SANITY_ACCESS_TOKEN"
@@ -317,45 +347,45 @@ else
   exit 1
 fi
 
-print_step 10 "/api/v1/me/"
+print_step 10 "/api/v1/me/" "Prompt #3"
 check_http 200 http://bc.localhost:8000/api/v1/me/ \
   -H "Authorization: Bearer $SANITY_ACCESS_TOKEN"
 
-print_step 11 "Associations (BC)"
+print_step 11 "Associations (BC)" "Prompt #4"
 check_http 200 http://localhost:8000/api/v1/associations/ \
   -H "Authorization: Bearer ${SANITY_ACCESS_TOKEN}" \
   -H "Host: bc.localhost:8000"
 
-print_step 12 "Teams (BC)"
+print_step 12 "Teams (BC)" "Prompt #4"
 check_http 200 http://localhost:8000/api/v1/teams/ \
   -H "Authorization: Bearer ${SANITY_ACCESS_TOKEN}" \
   -H "Host: bc.localhost:8000"
 
-print_step 13 "Associations (ON)"
+print_step 13 "Associations (ON)" "Prompt #4"
 check_http 200 http://localhost:8000/api/v1/associations/ \
   -H "Authorization: Bearer ${SANITY_ACCESS_TOKEN}" \
   -H "Host: on.localhost:8000"
 
-print_step 14 "Tryouts List (BC)"
+print_step 14 "Tryouts List (BC)" "Prompt #5"
 check_http 200 http://localhost:8000/api/v1/tryouts/ \
   -H "Host: bc.localhost:8000"
 
-print_step 15 "Tryouts Detail (BC)"
+print_step 15 "Tryouts Detail (BC)" "Prompt #5"
 check_http 200 "http://localhost:8000/api/v1/tryouts/${SANITY_TRYOUT_ID}/" \
   -H "Host: bc.localhost:8000"
 
-print_step 16 "Tryouts List (ON)"
+print_step 16 "Tryouts List (ON)" "Prompt #5"
 check_http 200 http://localhost:8000/api/v1/tryouts/ \
   -H "Host: on.localhost:8000"
 
-print_step 17 "Tryouts Write Restriction"
+print_step 17 "Tryouts Write Restriction" "Prompt #5"
 check_http "401|403" http://localhost:8000/api/v1/tryouts/ \
   -X POST \
   -H "Host: bc.localhost:8000" \
   -H "Content-Type: application/json" \
   -d '{"name":"Test Tryout","start_date":"2026-01-10","end_date":"2026-01-10","location":"Test","registration_url":"https://example.com","association":1,"region":1}'
 
-print_step 18 "Availability Me (Player)"
+print_step 18 "Availability Me (Player)" "Prompt #6"
 check_http 200 http://localhost:8000/api/v1/availability/me/ \
   -X PATCH \
   -H "Authorization: Bearer ${SANITY_PLAYER_TOKEN}" \
@@ -363,12 +393,12 @@ check_http 200 http://localhost:8000/api/v1/availability/me/ \
   -H "Host: bc.localhost:8000" \
   -d '{"is_open": true, "positions": ["OF"], "levels": ["AAA"]}'
 
-print_step 19 "Availability Search (Coach/Admin)"
+print_step 19 "Availability Search (Coach/Admin)" "Prompt #6"
 check_http 200 http://localhost:8000/api/v1/availability/search/ \
   -H "Authorization: Bearer ${SANITY_COACH_TOKEN}" \
   -H "Host: bc.localhost:8000"
 
-print_step 20 "Contact Request Create"
+print_step 20 "Contact Request Create" "Prompt #7"
 contact_create_code=$(curl -s -o "$TMP_BODY" -w "%{http_code}" \
   -X POST http://localhost:8000/api/v1/contact-requests/ \
   -H "Authorization: Bearer ${SANITY_COACH_TOKEN}" \
@@ -392,7 +422,7 @@ else
   exit 1
 fi
 
-print_step 21 "Contact Request Respond (Approve)"
+print_step 21 "Contact Request Respond (Approve)" "Prompt #7"
 check_http 200 http://localhost:8000/api/v1/contact-requests/${SANITY_CONTACT_REQUEST_ID}/respond/ \
   -X POST \
   -H "Authorization: Bearer ${SANITY_PLAYER_TOKEN}" \
@@ -400,7 +430,7 @@ check_http 200 http://localhost:8000/api/v1/contact-requests/${SANITY_CONTACT_RE
   -H "Host: bc.localhost:8000" \
   -d '{"status":"approved"}'
 
-print_step 22 "Contact Request Respond (Decline)"
+print_step 22 "Contact Request Respond (Decline)" "Prompt #7"
 contact_decline_code=$(curl -s -o "$TMP_BODY" -w "%{http_code}" \
   -X POST http://localhost:8000/api/v1/contact-requests/ \
   -H "Authorization: Bearer ${SANITY_COACH_TOKEN}" \
@@ -429,7 +459,7 @@ else
   exit 1
 fi
 
-print_step 23 "Profile Me (Player)"
+print_step 23 "Profile Me (Player)" "Prompt #8"
 check_http 200 http://localhost:8000/api/v1/profile/me/ \
   -H "Authorization: Bearer ${SANITY_PLAYER_TOKEN}" \
   -H "Host: bc.localhost:8000"
@@ -440,10 +470,41 @@ check_http 200 http://localhost:8000/api/v1/profile/me/ \
   -H "Host: bc.localhost:8000" \
   -d '{"display_name":"J. Player","birth_year":2011,"positions":["OF"],"bats":"R","throws":"R"}'
 
-print_step 24 "Profile Me (Non-Player)"
+print_step 24 "Profile Me (Non-Player)" "Prompt #8"
 check_http 403 http://localhost:8000/api/v1/profile/me/ \
   -H "Authorization: Bearer ${SANITY_NON_PLAYER_TOKEN}" \
   -H "Host: bc.localhost:8000"
 
-print_step 25 "Profiles List (Should 404)"
+print_step 25 "Profiles List (Should 404)" "Prompt #8"
 check_http 404 http://localhost:8000/api/v1/profiles/
+
+print_step 26 "Committed: Player Commits" "Prompt #9"
+check_http 200 http://localhost:8000/api/v1/availability/me/ \
+  -X PATCH \
+  -H "Authorization: Bearer ${SANITY_PLAYER_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"is_committed": true}'
+
+print_step 27 "Committed: Open Players Search Excludes Committed" "Prompt #9"
+open_players_code=$(curl -s -o "$TMP_BODY" -w "%{http_code}" \
+  http://localhost:8000/api/v1/open-players/ \
+  -H "Authorization: Bearer ${SANITY_COACH_TOKEN}" \
+  -H "Host: bc.localhost:8000")
+if [[ "$open_players_code" == "200" ]]; then
+  TMP_BODY_PATH="$TMP_BODY" check_json_empty_array "Empty list (committed excluded)"
+else
+  report "HTTP 200" "HTTP $open_players_code" "no"
+  exit 1
+fi
+
+print_step 28 "Committed: Contact Request Blocked" "Prompt #9"
+check_http 400 http://localhost:8000/api/v1/contact-requests/ \
+  -X POST \
+  -H "Authorization: Bearer ${SANITY_COACH_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d "{\"player_id\":${SANITY_PLAYER_ID},\"requesting_team_id\":${SANITY_TEAM_ID},\"message\":\"Committed check.\"}"
+
+echo
+echo "All sanity checks passed."
