@@ -17,6 +17,8 @@ class PlayerAvailabilityMeSerializer(serializers.ModelSerializer):
             "id",
             "region",
             "is_open",
+            "is_committed",
+            "committed_at",
             "positions",
             "levels",
             "expires_at",
@@ -24,7 +26,7 @@ class PlayerAvailabilityMeSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "region", "created_at", "updated_at")
+        read_only_fields = ("id", "region", "committed_at", "created_at", "updated_at")
 
     def validate_allowed_teams(self, teams):
         request = self.context.get("request")

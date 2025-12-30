@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from accounts.permissions import IsAdminRole, IsApprovedCoach
+from contacts.models import AuditLog
 from availability.models import PlayerAvailability
 from availability.permissions import AvailabilitySearchPermission, IsPlayerRole
 from availability.serializers import (
@@ -14,11 +15,16 @@ from availability.serializers import (
 from organizations.models import TeamCoach
 
 
+AUDIT_COMMITTED_SET = "COMMITTED_SET"
+AUDIT_COMMITTED_CLEARED = "COMMITTED_CLEARED"
+
+
 def _base_open_queryset(region):
     now = timezone.now()
     return PlayerAvailability.objects.filter(
         region=region,
         is_open=True,
+        is_committed=False,
     ).filter(Q(expires_at__isnull=True) | Q(expires_at__gt=now))
 
 
@@ -41,7 +47,27 @@ def availability_me(request):
             context={"request": request},
         )
         serializer.is_valid(raise_exception=True)
-        serializer.save()
+        availability = serializer.save()
+
+        if "is_committed" in serializer.validated_data:
+            if availability.is_committed:
+                availability.is_open = False
+                availability.committed_at = timezone.now()
+                action = AUDIT_COMMITTED_SET
+            else:
+                availability.committed_at = None
+                action = AUDIT_COMMITTED_CLEARED
+            availability.save(update_fields=["is_open", "is_committed", "committed_at"])
+            AuditLog.objects.create(
+                actor=request.user,
+                action=action,
+                target_type=availability.__class__.__name__,
+                target_id=availability.id,
+                region=availability.region,
+            )
+        elif availability.is_committed and availability.is_open:
+            availability.is_open = False
+            availability.save(update_fields=["is_open"])
         return Response(serializer.data)
 
     serializer = PlayerAvailabilityMeSerializer(availability, context={"request": request})

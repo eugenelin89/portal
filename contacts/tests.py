@@ -160,3 +160,35 @@ class ContactRequestApiTests(TestCase):
         response = self.client.get("/api/v1/open-players/", HTTP_HOST="bc.localhost:8000")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
+
+    def test_contact_request_blocked_for_committed_player(self):
+        availability = PlayerAvailability.objects.create(
+            player=self.player,
+            region=self.bc,
+            is_open=True,
+            is_committed=True,
+        )
+        availability.allowed_teams.add(self.team_bc)
+
+        self.client.force_authenticate(user=self.coach)
+        response = self.client.post(
+            "/api/v1/contact-requests/",
+            {"player_id": self.player.id, "requesting_team_id": self.team_bc.id},
+            format="json",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_open_players_excludes_committed(self):
+        availability = PlayerAvailability.objects.create(
+            player=self.player,
+            region=self.bc,
+            is_open=True,
+            is_committed=True,
+        )
+        availability.allowed_teams.add(self.team_bc)
+
+        self.client.force_authenticate(user=self.coach)
+        response = self.client.get("/api/v1/open-players/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)

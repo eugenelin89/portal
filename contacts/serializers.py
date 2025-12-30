@@ -61,7 +61,11 @@ class ContactRequestCreateSerializer(serializers.ModelSerializer):
             player_id=attrs["player_id"],
             region=region,
         ).first()
-        if not player_availability or not player_availability.is_open_effective:
+        if not player_availability:
+            raise serializers.ValidationError("Player is not currently open.")
+        if player_availability.is_committed:
+            raise serializers.ValidationError("Player is committed and unavailable.")
+        if not player_availability.is_open_effective:
             raise serializers.ValidationError("Player is not currently open.")
 
         if not player_availability.allowed_teams.filter(id=team.id).exists():

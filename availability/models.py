@@ -16,6 +16,8 @@ class PlayerAvailability(models.Model):
     )
     region = models.ForeignKey(Region, on_delete=models.PROTECT, related_name="availabilities")
     is_open = models.BooleanField(default=False)
+    is_committed = models.BooleanField(default=False)
+    committed_at = models.DateTimeField(null=True, blank=True)
     positions = models.JSONField(null=True, blank=True)
     levels = models.JSONField(null=True, blank=True)
     expires_at = models.DateTimeField(null=True, blank=True)
@@ -33,6 +35,8 @@ class PlayerAvailability(models.Model):
 
     @property
     def is_open_effective(self) -> bool:
+        if self.is_committed:
+            return False
         if not self.is_open:
             return False
         if self.expires_at and self.expires_at <= timezone.now():

@@ -7,6 +7,7 @@ from rest_framework.test import APIClient
 
 from accounts.models import AccountProfile
 from availability.models import PlayerAvailability
+from contacts.models import AuditLog
 from organizations.models import Association, Team, TeamCoach
 from regions.models import Region
 
@@ -105,6 +106,39 @@ class AvailabilityApiTests(TestCase):
             is_open=True,
         )
         availability.allowed_teams.add(team_on)
+
+        self.client.force_authenticate(user=self.coach)
+        response = self.client.get("/api/v1/availability/search/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_player_can_commit_and_is_open_forced_false(self):
+        self.client.force_authenticate(user=self.player)
+        response = self.client.patch(
+            "/api/v1/availability/me/",
+            {"is_committed": True, "is_open": True},
+            format="json",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data["is_committed"], True)
+        self.assertEqual(response.data["is_open"], False)
+        self.assertIsNotNone(response.data["committed_at"])
+        self.assertTrue(
+            AuditLog.objects.filter(action="COMMITTED_SET", target_type="PlayerAvailability").exists()
+        )
+
+    def test_committed_player_excluded_from_search(self):
+        self.coach.profile.is_coach_approved = True
+        self.coach.profile.save()
+
+        availability = PlayerAvailability.objects.create(
+            player=self.player,
+            region=self.bc,
+            is_open=True,
+            is_committed=True,
+        )
+        availability.allowed_teams.add(self.team_bc)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.get("/api/v1/availability/search/", HTTP_HOST="bc.localhost:8000")

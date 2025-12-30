@@ -117,6 +117,7 @@ def open_players(request):
     queryset = PlayerAvailability.objects.filter(
         region=region,
         is_open=True,
+        is_committed=False,
     ).filter(
         models.Q(expires_at__isnull=True) | models.Q(expires_at__gt=now)
     )
