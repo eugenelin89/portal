@@ -851,3 +851,97 @@ You may proceed only if:
 
 ---
 
+## Sanity Check — After Prompt #9 (Committed Status)
+
+These checks verify committed status behavior, exclusion from open searches, and contact request blocking.
+
+---
+
+### 36. Migrate & Run Tests
+
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+
+* availability migrations apply cleanly
+* All tests pass, including:
+  * commit/uncommit behavior
+  * committed exclusion from open searches
+  * contact request blocking for committed players
+
+---
+
+### 37. Player Commits (Self Only)
+
+```bash
+curl -i -X PATCH http://localhost:8000/api/v1/availability/me/ \
+  -H "Authorization: Bearer <player_access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"is_committed": true}'
+```
+
+Expected:
+
+* HTTP 200
+* `is_committed=true`
+* `is_open=false`
+* `committed_at` populated
+
+---
+
+### 38. Open Players Search Excludes Committed
+
+```bash
+curl -i http://localhost:8000/api/v1/open-players/ \
+  -H "Authorization: Bearer <coach_access_token>" \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* Committed players are not returned
+
+---
+
+### 39. Contact Request Blocked for Committed Player
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/contact-requests/ \
+  -H "Authorization: Bearer <coach_access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'
+```
+
+Expected:
+
+* HTTP 400
+* Error indicates player is committed/unavailable
+
+---
+
+### 40. Audit Log Entry (If Enabled)
+
+In Django admin:
+
+* Verify AuditLog entries exist for:
+  * `COMMITTED_SET` (and `COMMITTED_CLEARED` if used)
+* Entries include actor, target, region, timestamp
+
+---
+
+### Exit Gate — Prompt #9
+
+You may proceed only if:
+
+* All Prompt #1–#8 checks remain green
+* All tests pass
+* Committed status excludes players from open searches
+* Contact requests are blocked for committed players
+* Audit logging (if enabled) is complete and accurate
+* Changes are committed
