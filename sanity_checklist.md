@@ -7,6 +7,7 @@ Each section is **append-only**.
 * Earlier sections are never modified.
 * New prompts add new sections at the bottom.
 
+
 This allows safe progression without rewriting prior verification steps.
 
 ---
@@ -846,7 +847,5 @@ You may proceed only if:
 * Changes are committed
 
 ---
-
-
 
 

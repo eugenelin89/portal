@@ -112,6 +112,23 @@ For full details, see **ARCHITECTURE.md**.
 
 ---
 
+## ✅ Sanity Checks (Quick Run)
+
+Use the helper script to run migrations, tests, and basic API checks:
+
+```bash
+chmod +x scripts/run_sanity_checks.sh
+./scripts/run_sanity_checks.sh
+```
+
+Optional JWT check (requires an existing user):
+
+```bash
+SANITY_USERNAME=<user> SANITY_PASSWORD=<pass> ./scripts/run_sanity_checks.sh
+```
+
+---
+
 ## 🚀 Project Status
 This repository is under active development as an MVP.
 
@@ -129,4 +146,3 @@ TBD
 
 ## 🙌 Acknowledgements
 Inspired by the NCAA transfer portal model, adapted for **local youth baseball** with a focus on privacy, dignity, and league governance.
-
