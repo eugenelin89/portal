@@ -753,3 +753,100 @@ You may proceed only if:
 
 
 
+## Sanity Check — After Prompt #8 (PlayerProfile + /api/v1/profile/me/ + Privacy Defaults)
+
+These checks verify global player profiles, self-only access, role gating, and privacy-by-default (no public listing).
+
+---
+
+### 31. Migrate & Run Tests
+
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+
+* profiles migrations apply cleanly
+* All tests pass, including non-player role blocking for `/api/v1/profile/me/`
+
+---
+
+### 32. Player Can GET Their Profile (Auto-Creates)
+
+```bash
+curl -i http://localhost:8000/api/v1/profile/me/ \
+  -H "Authorization: Bearer <player_access_token>" \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 200
+* A profile object is returned
+* If this is first access, profile is auto-created
+
+---
+
+### 33. Player Can PATCH Their Profile
+
+```bash
+curl -i -X PATCH http://localhost:8000/api/v1/profile/me/ \
+  -H "Authorization: Bearer <player_access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"display_name":"J. Player","birth_year":2011,"positions":["OF"],"bats":"R","throws":"R"}'
+```
+
+Expected:
+
+* HTTP 200
+* Returned profile reflects updates
+
+---
+
+### 34. Non-Player Roles Are Blocked
+
+Using a coach/admin/staff token:
+
+```bash
+curl -i http://localhost:8000/api/v1/profile/me/ \
+  -H "Authorization: Bearer <non_player_access_token>" \
+  -H "Host: bc.localhost:8000"
+```
+
+Expected:
+
+* HTTP 403
+
+---
+
+### 35. Privacy Defaults — No Public Listing
+
+```bash
+curl -i http://localhost:8000/api/v1/profiles/
+```
+
+Expected:
+
+* HTTP 404
+* Confirms there is no public directory/list endpoint
+
+---
+
+### Exit Gate — Prompt #8
+
+You may proceed only if:
+
+* All Prompt #1–#7 checks remain green
+* All tests pass
+* `/api/v1/profile/me/` is self-only and player-only
+* No public profile listing exists
+* Changes are committed
+
+---
+
+
+
+

@@ -754,3 +754,109 @@ After implementing, summarize changes and provide curl examples.
 - `curl -X POST http://localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'`
 - Player responds:
 - `curl -X POST http://localhost:8000/api/v1/contact-requests/42/respond/ -H "Authorization: Bearer <player_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"status":"approved"}'`
+
+
+---
+
+## Prompt 008 — PlayerProfile (Global) + /api/v1/profile/me/ + Privacy Defaults
+
+
+**Date:** 2025-12-29
+**Tasks:** CODEX_TASKS.md — Task 5.1, 5.1A, 5.2
+
+
+### Prompt
+
+Implement CODEX_TASKS.md Task 5.1, Task 5.1A, and Task 5.2 (PlayerProfile core MVP).
+
+Scope: API-first (no web UI for now).
+
+Goal:
+- Create a global PlayerProfile that belongs to a user (one profile per user).
+- Provide /api/v1/profile/me/ so the current user can GET/PATCH their profile.
+- Keep profiles private by default (no public directory; only self + admin can view).
+
+Constraints:
+- Keep it minimal and MVP-safe.
+- Do NOT add public profile browsing endpoints.
+- Do NOT modify existing region middleware.
+- Keep region out of PlayerProfile (global identity).
+- Use existing AccountProfile role logic: only role=PLAYER should create/edit a PlayerProfile by default.
+- Admin users can view/edit via admin.
+
+Requirements:
+
+1) Create a new Django app: `profiles`.
+
+2) Model: PlayerProfile (Global)
+Fields (MVP):
+- user (OneToOne to auth.User, unique)
+- display_name (string; allow initials)
+- birth_year OR age_group (choose one, but keep it simple; prefer birth_year int)
+- positions (simple JSONField list of strings OR comma-separated string)
+- bats (choice: R/L/S; optional)
+- throws (choice: R/L; optional)
+- created_at / updated_at
+
+Rules:
+- One profile per user.
+- Default: profile exists or is auto-created on first GET/PUT/PATCH of /profile/me/ (choose a simple pattern and document it).
+- Profiles are private by default.
+
+3) Admin:
+- Register PlayerProfile in Django admin.
+
+4) API:
+Create endpoint: /api/v1/profile/me/
+- GET: return current user’s PlayerProfile (create one if missing OR return 404; choose one approach and be consistent)
+- PATCH: update safe fields only (display_name, birth_year/age_group, positions, bats, throws)
+Permissions:
+- Only authenticated user with role=PLAYER can access /profile/me/ (self-only).
+- Admins may access any profile via admin only (no public API for listing).
+
+5) Privacy defaults (Task 5.2):
+- Ensure there is NO endpoint like /api/v1/profiles/ listing all profiles.
+- Ensure no public player directory exists.
+- Ensure any accidental access to other users’ profiles is blocked.
+
+6) Tests:
+- Player can GET/PATCH /api/v1/profile/me/
+- Non-player roles cannot create/update PlayerProfile via /me endpoint (coach/admin user via API should be blocked; admin can use admin site)
+- Profile is not publicly listable (no list route; or returns 404 if someone tries).
+- Self-only access enforced.
+
+Deliverables:
+- profiles app with model + migrations
+- admin registration
+- serializer + view + urls wiring under /api/v1/
+- tests passing
+
+After:
+- Summarize changes
+- Provide curl examples for GET and PATCH /api/v1/profile/me/
+
+### Outcome
+- Added `profiles` app with a global `PlayerProfile` model
+- Registered PlayerProfile in Django admin
+- Implemented `/api/v1/profile/me/` GET/PATCH endpoint
+- Auto-creates a profile on first access
+- Enforced **player-only** access (non-player roles receive 403)
+- Confirmed no public list route exists (`/api/v1/profiles/` returns 404)
+- Tests added; all tests pass after adjusting the endpoint guard to match expected behavior
+
+
+### Verification
+- `python manage.py migrate`
+- `python manage.py test`
+
+
+GET profile:
+- `curl http://localhost:8000/api/v1/profile/me/ -H "Authorization: Bearer <player_access_token>"`
+
+
+PATCH profile:
+- `curl -X PATCH http://localhost:8000/api/v1/profile/me/ -H "Authorization: Bearer <player_access_token>" -H "Content-Type: application/json" -d '{"display_name":"J. Player","birth_year":2011,"positions":["OF"],"bats":"R","throws":"R"}'`
+
+
+Privacy check:
+- `curl -i http://localhost:8000/api/v1/profiles/` (expected 404)

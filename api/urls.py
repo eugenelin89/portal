@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from api import views
 from availability import views as availability_views
 from contacts.views import ContactRequestViewSet, contact_request_respond, open_players
+from profiles import views as profile_views
 from organizations.views import AssociationViewSet, TeamViewSet
 from tryouts.views import TryoutEventViewSet
 
@@ -19,6 +20,7 @@ urlpatterns = [
     path("me/", views.me, name="me"),
     path("availability/me/", availability_views.availability_me, name="availability_me"),
     path("availability/search/", availability_views.availability_search, name="availability_search"),
+    path("profile/me/", profile_views.profile_me, name="profile_me"),
     path("contact-requests/<int:pk>/respond/", contact_request_respond, name="contact_request_respond"),
     path("open-players/", open_players, name="open_players"),
     path("protected/", views.protected, name="protected"),
