@@ -50,7 +50,6 @@ check_http() {
 check_command_success() {
   local expected="$1"
   shift
-  echo "Expected: $expected"
   set +e
   "$@"
   local status=$?
@@ -248,7 +247,6 @@ fi
 
 print_step 5 "Start Server + Health/Auth Checks" "Prompt #1"
 expected="server starts and responds to health check"
-echo "Expected: $expected"
 python manage.py runserver 8000 >/tmp/portal_runserver.log 2>&1 &
 SERVER_PID=$!
 
@@ -505,6 +503,63 @@ check_http 400 http://localhost:8000/api/v1/contact-requests/ \
   -H "Content-Type: application/json" \
   -H "Host: bc.localhost:8000" \
   -d "{\"player_id\":${SANITY_PLAYER_ID},\"requesting_team_id\":${SANITY_TEAM_ID},\"message\":\"Committed check.\"}"
+
+print_step 29 "Seed Demo Data" "Prompt #10"
+check_command_success "seed_demo runs successfully" python manage.py seed_demo
+
+print_step 30 "Load Demo Fixtures" "Prompt #10"
+demo_exports=$(python - <<'PY'
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from contacts.models import ContactRequest
+from organizations.models import Team
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+player = User.objects.get(username="player1")
+team = Team.objects.get(name="VMB 13U AAA")
+
+ContactRequest.objects.filter(
+    player=player,
+    requesting_team=team,
+    status=ContactRequest.Status.PENDING,
+).delete()
+
+print(f"DEMO_PLAYER_ID={player.id}")
+print(f"DEMO_TEAM_ID={team.id}")
+PY
+)
+
+if [[ -n "$demo_exports" ]]; then
+  eval "$demo_exports"
+  report "demo IDs loaded" "player_id=$DEMO_PLAYER_ID, team_id=$DEMO_TEAM_ID" "yes"
+else
+  report "demo IDs loaded" "failed to load demo IDs" "no"
+  exit 1
+fi
+
+print_step 31 "Seeded Tryouts (Public)" "Prompt #10"
+check_http 200 http://localhost:8000/api/v1/tryouts/ \
+  -H "Host: bc.localhost:8000"
+
+print_step 32 "Seeded Open Players (Coach)" "Prompt #10"
+DEMO_COACH_TOKEN=$(get_token "coach1" "coachpass123")
+check_http 200 http://localhost:8000/api/v1/open-players/ \
+  -H "Authorization: Bearer ${DEMO_COACH_TOKEN}" \
+  -H "Host: bc.localhost:8000"
+
+print_step 33 "Seeded Contact Request" "Prompt #10"
+check_http 201 http://localhost:8000/api/v1/contact-requests/ \
+  -X POST \
+  -H "Authorization: Bearer ${DEMO_COACH_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d "{\"player_id\":${DEMO_PLAYER_ID},\"requesting_team_id\":${DEMO_TEAM_ID},\"message\":\"Seed demo contact.\"}"
 
 echo
 echo "All sanity checks passed."
