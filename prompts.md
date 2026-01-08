@@ -1162,3 +1162,177 @@ After:
 * Zero cross-region data leaks
 * Strict privacy-by-default for players
 * MVP considered **security-complete** after this prompt
+
+---
+
+## Prompt 012 — Web UI Foundation + Public Tryouts (Professional + Mobile-Friendly)
+
+**Date:** 2025-01-XX  
+**Tasks:** Web UI Phase 1 (post–Task 11.1)
+
+### Prompt
+
+## Prompt 012 — Web UI Foundation + Public Tryouts (Professional + Mobile-Friendly)
+
+You are working in the BC Baseball Transfer Portal repo.
+
+Implement the first slice of the Web UI so the product is usable in a browser and looks professional AND mobile-friendly.
+
+Scope rules:
+- Web UI only (Django templates/views). Do NOT change existing API endpoints unless necessary for correctness.
+- Reuse existing models and region middleware (`request.region_code` / `request.region`) for all queries.
+- Keep UI professional, consistent, and responsive.
+- Use Bootstrap 5 (CDN) + a tiny custom stylesheet for polish.
+- No SPA framework. Server-rendered Django templates only.
+
+Deliverables (must complete all):
+
+1) Base UI / Design System (Responsive)
+- Create `templates/base.html` with:
+  - `<meta name="viewport" content="width=device-width, initial-scale=1">`
+  - Responsive navbar (Bootstrap):
+    - Collapses into hamburger menu on mobile
+    - Brand: “BC Baseball Transfer Portal”
+    - Links: Tryouts (public), Dashboard (auth only), Admin (staff only)
+    - Login/Logout buttons depending on auth state
+  - A consistent page container + page header pattern (title + optional subtitle + optional actions)
+  - Bootstrap alerts for Django messages (success/error/info)
+  - Footer (small, muted)
+- Add `static/css/app.css` with small, tasteful defaults:
+  - subtle background, card spacing, improved form spacing
+  - ensure tap targets (buttons/links) are comfortably sized on mobile
+- Ensure templates are found (DIRS in settings if needed) without breaking existing setup.
+
+2) Home / Landing Page (Mobile-first)
+- Route: `GET /`
+- Polished hero section that stacks nicely on mobile:
+  - Short explanation (“Privacy-first transfer portal for BC baseball tryouts and recruiting”)
+  - Primary CTA button to “Browse Tryouts”
+  - Secondary CTA to “Sign in”
+- Must render correctly on small screens without horizontal scrolling.
+
+3) Authentication UI (Minimal, Professional, Mobile-friendly)
+- Implement login/logout using Django’s built-in auth views (recommended).
+- Routes:
+  - `/accounts/login/`
+  - `/accounts/logout/`
+- Use templates extending `base.html`.
+- Login form must:
+  - be centered and readable on mobile
+  - have clear error display
+  - use proper input sizing and spacing (Bootstrap form controls)
+- Do NOT implement registration unless it already exists.
+
+4) Public Tryouts Web UI (Core, Responsive)
+- Implement a public tryouts browse page using DB queries (not calling the API):
+  - Route: `GET /tryouts/`
+  - Uses `TryoutEvent`
+  - Region-scoped by `request.region` (fallback to BC like middleware)
+  - Only active tryouts, ordered by start_date ascending
+
+- Filters via query params, designed mobile-first:
+  - age_group (dropdown)
+  - level (dropdown)
+  - date_from / date_to (date inputs)
+  - “Apply” button and “Clear filters” link/button
+  - On desktop: filters can sit in a sidebar card (col-md-3) with results beside it
+  - On mobile: filters must stack ABOVE results and remain usable without tiny controls
+
+- Results display must be responsive:
+  - Use cards (preferred) so it looks good on mobile
+  - Each tryout card includes:
+    - name
+    - age_group + level badges (if available)
+    - date range
+    - location
+    - prominent “Register” button linking to registration_url (new tab)
+    - optional notes (muted, trimmed)
+- Include a polished empty state when no results.
+
+5) Optional Tryout Detail Page (Responsive)
+- Route: `GET /tryouts/<id>/`
+- Same region/active checks as list page
+- Show full info + register button
+- Return 404 if tryout not in region or inactive
+- Layout must be mobile-friendly (single-column stack on small screens).
+
+6) Role-Aware Dashboard Router (Thin)
+- Route: `GET /dashboard/` (login required)
+- Behavior:
+  - If user role is PLAYER -> redirect to `/player/` (placeholder page for now)
+  - If user role is COACH -> redirect to `/coach/` (placeholder page for now)
+  - If ADMIN/staff -> redirect to `/admin/`
+- Create placeholder pages (mobile-friendly):
+  - `GET /player/` -> “Player Dashboard (Coming next)” with placeholder links
+  - `GET /coach/` -> “Coach Dashboard (Coming next)” with placeholder links
+- Do not implement player/coach flows yet in this prompt.
+
+7) Mobile Responsiveness Acceptance (Required)
+Implement at least these responsive behaviors:
+- Navbar collapses correctly on small screens
+- No horizontal scrolling on iPhone-sized widths
+- Buttons are not tiny; tap targets are comfortable
+- Tryouts list is readable on mobile (cards, good spacing)
+- Forms are readable and usable on mobile
+
+8) Tests (Minimal)
+- Add lightweight Django tests:
+  - `/` returns 200
+  - `/tryouts/` returns 200 for anonymous users
+  - `/dashboard/` redirects to login when anonymous
+  - Tryout detail is region-isolated (wrong region host returns 404) if feasible via Host header tests
+
+Acceptance checks (manual):
+- `python manage.py migrate`
+- `python manage.py seed_demo`
+- `python manage.py runserver`
+- Verify on desktop and by resizing browser to mobile width:
+  - `http://bc.localhost:8000/` looks good
+  - `http://bc.localhost:8000/tryouts/` shows seeded tryout and filters work
+  - Login with seeded users and visit `/dashboard/`:
+    - player1 -> /player/
+    - coach1 -> /coach/
+    - admin -> /admin/
+  - Navbar collapses and UI remains usable on small width
+
+After implementation:
+- Summarize what was added and which files were created/modified.
+- Provide a short “How to run + verify” checklist.
+
+
+---
+
+### Outcome
+- Implemented the first Web UI slice using **Bootstrap 5** with a professional, mobile-friendly design system.
+- Added a responsive base layout with navbar, footer, alerts, and consistent page headers.
+- Built a polished landing page and authentication UI (login/logout) using Django’s built-in auth views.
+- Implemented **public, region-scoped Tryouts pages**:
+  - `/tryouts/` list view with responsive cards
+  - `/tryouts/<id>/` detail view with region isolation
+- Added **role-aware dashboard routing**:
+  - `/dashboard/` redirects players → `/player/`, coaches → `/coach/`, admins → `/admin/`
+- Added placeholder Player and Coach dashboards to establish navigation flow.
+- Added minimal UI tests, including a region-isolation test for tryout detail pages.
+- Configured login redirect behavior to land users on `/dashboard/` after sign-in.
+- Ensured all pages are usable on mobile widths (collapsed navbar, stacked layouts, readable cards).
+
+### Files Created / Modified
+- `urls.py`
+- `settings.py`
+- `views.py`
+- `web_views.py`
+- `templates/base.html`
+- `templates/home.html`
+- `templates/login.html`
+- `templates/tryouts/list.html`
+- `templates/tryouts/detail.html`
+- `templates/player.html`
+- `templates/coach.html`
+- `static/css/app.css`
+- `tests.py`
+
+### Verification
+```bash
+python manage.py migrate
+python manage.py seed_demo
+python manage.py runserver

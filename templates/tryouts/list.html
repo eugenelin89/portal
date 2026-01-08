@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Tryouts | BC Baseball Transfer Portal{% endblock %}
+
+{% block content %}
+  <div class="row g-4">
+    <div class="col-12 col-md-4 col-lg-3">
+      <div class="card shadow-sm filters-sticky">
+        <div class="card-body">
+          <h2 class="h6 text-uppercase text-muted mb-3">Filters</h2>
+          <form method="get" class="vstack gap-3">
+            <div>
+              <label class="form-label" for="filter-age">Age group</label>
+              <select class="form-select" id="filter-age" name="age_group">
+                <option value="">All</option>
+                {% for group in age_groups %}
+                  <option value="{{ group }}" {% if filters.age_group == group %}selected{% endif %}>{{ group }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="filter-level">Level</label>
+              <select class="form-select" id="filter-level" name="level">
+                <option value="">All</option>
+                {% for item in levels %}
+                  <option value="{{ item }}" {% if filters.level == item %}selected{% endif %}>{{ item }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div>
+              <label class="form-label" for="filter-date-from">Date from</label>
+              <input class="form-control" type="date" id="filter-date-from" name="date_from" value="{{ filters.date_from }}">
+            </div>
+            <div>
+              <label class="form-label" for="filter-date-to">Date to</label>
+              <input class="form-control" type="date" id="filter-date-to" name="date_to" value="{{ filters.date_to }}">
+            </div>
+            <div class="d-grid gap-2">
+              <button class="btn btn-primary" type="submit">Apply</button>
+              <a class="btn btn-outline-secondary" href="{% url 'tryout_list' %}">Clear filters</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+    <div class="col-12 col-md-8 col-lg-9">
+      {% if tryouts %}
+        <div class="row g-3">
+          {% for tryout in tryouts %}
+            <div class="col-12">
+              <div class="card shadow-sm h-100">
+                <div class="card-body">
+                  <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                    <div>
+                      <h3 class="h5 mb-2">
+                        <a class="text-decoration-none" href="{% url 'tryout_detail' tryout.id %}">{{ tryout.name }}</a>
+                      </h3>
+                      <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% if tryout.team %}
+                          <span class="badge text-bg-primary">{{ tryout.team.age_group }}</span>
+                          {% if tryout.team.level %}
+                            <span class="badge text-bg-secondary">{{ tryout.team.level }}</span>
+                          {% endif %}
+                        {% endif %}
+                      </div>
+                      <p class="mb-1"><strong>Dates:</strong> {{ tryout.start_date|date:"M j, Y" }} &ndash; {{ tryout.end_date|date:"M j, Y" }}</p>
+                      <p class="mb-1"><strong>Location:</strong> {{ tryout.location }}</p>
+                      {% if tryout.notes %}
+                        <p class="text-muted small mb-0">{{ tryout.notes|truncatechars:160 }}</p>
+                      {% endif %}
+                    </div>
+                    <div class="d-flex align-items-start">
+                      <a class="btn btn-success btn-lg" href="{{ tryout.registration_url }}" target="_blank" rel="noopener">Register</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="card border-0 shadow-sm">
+          <div class="card-body p-4">
+            <h2 class="h5 mb-2">No tryouts match those filters.</h2>
+            <p class="text-muted mb-3">Try widening the dates or clearing filters to see available events.</p>
+            <a class="btn btn-outline-secondary" href="{% url 'tryout_list' %}">Clear filters</a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

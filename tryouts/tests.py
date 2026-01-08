@@ -133,3 +133,42 @@ class TryoutModelTests(TestCase):
         )
         with self.assertRaises(ValidationError):
             tryout.full_clean()
+
+
+class TryoutWebTests(TestCase):
+    def _create_tryout(self, region, association, team=None, **kwargs):
+        return TryoutEvent.objects.create(
+            region=region,
+            association=association,
+            team=team,
+            name=kwargs.get("name", "Tryout"),
+            start_date=kwargs.get("start_date", date(2025, 1, 10)),
+            end_date=kwargs.get("end_date", date(2025, 1, 11)),
+            location=kwargs.get("location", "Field"),
+            registration_url=kwargs.get("registration_url", "https://example.com"),
+            is_active=kwargs.get("is_active", True),
+        )
+
+    def test_home_page_returns_200(self):
+        response = self.client.get("/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+
+    def test_tryouts_page_returns_200(self):
+        response = self.client.get("/tryouts/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+
+    def test_dashboard_redirects_for_anonymous(self):
+        response = self.client.get("/dashboard/")
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/accounts/login/", response.url)
+
+    def test_tryout_detail_is_region_scoped(self):
+        bc = Region.objects.get(code="bc")
+        on = Region.objects.create(code="on", name="Ontario", is_active=True)
+        assoc_bc = Association.objects.create(region=bc, name="BC Assoc")
+        assoc_on = Association.objects.create(region=on, name="ON Assoc")
+        tryout = self._create_tryout(region=bc, association=assoc_bc, name="BC Tryout")
+        self._create_tryout(region=on, association=assoc_on, name="ON Tryout")
+
+        response = self.client.get(f"/tryouts/{tryout.id}/", HTTP_HOST="on.localhost:8000")
+        self.assertEqual(response.status_code, 404)
