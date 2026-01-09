@@ -2,10 +2,10 @@
 
 This document defines **incremental sanity checks after each major Codex prompt**.
 
-Each section is **append-only**.
+Each section is **append-only when possible**.
 
-* Earlier sections are never modified.
 * New prompts add new sections at the bottom.
+* Minor corrections may be applied to earlier sections to keep checks accurate.
 
 
 This allows safe progression without rewriting prior verification steps.
@@ -1287,7 +1287,7 @@ Expected:
 * Form is usable on mobile
 * No styling regressions
 
-Log in using seeded credentials.
+Log in using seeded credentials and confirm Logout works from the navbar.
 
 Expected:
 
@@ -1393,7 +1393,7 @@ These checks verify that the Web UI is functional, mobile-friendly, role-aware, 
 
 ---
 
-### 53. Migrate & Run Full Test Suite
+### 62. Migrate & Run Full Test Suite
 
 ```bash
 python manage.py migrate
@@ -1408,7 +1408,7 @@ Expected:
 
 ---
 
-### 54. Landing Page (Public)
+### 63. Landing Page (Public)
 
 ```bash
 curl -i http://bc.localhost:8000/
@@ -1423,7 +1423,7 @@ Expected:
 
 ---
 
-### 55. Public Tryouts Browse (Web UI)
+### 64. Public Tryouts Browse (Web UI)
 
 ```bash
 curl -i http://bc.localhost:8000/tryouts/
@@ -1438,7 +1438,7 @@ Expected:
 
 ---
 
-### 56. Tryout Detail (Region Isolation)
+### 65. Tryout Detail (Region Isolation)
 
 ```bash
 curl -i http://bc.localhost:8000/tryouts/<id>/
@@ -1462,10 +1462,10 @@ Expected:
 
 ---
 
-### 57. Authentication Pages
+### 66. Authentication Pages
 
 ```bash
-curl -i http://bc.localhost:8000/login/
+curl -i http://bc.localhost:8000/accounts/login/
 ```
 
 Expected:
@@ -1476,17 +1476,12 @@ Expected:
 
 Logout:
 
-```bash
-curl -i http://bc.localhost:8000/logout/
-```
-
-Expected:
-
-* Redirects to landing page or login
+* Use the navbar logout button (POST)
+* Expected redirect to landing page
 
 ---
 
-### 58. Post-Login Redirect
+### 67. Post-Login Redirect
 
 After logging in via the Web UI:
 
@@ -1501,7 +1496,7 @@ Expected:
 
 ---
 
-### 59. Player Dashboard (Authenticated)
+### 68. Player Pages (Authenticated)
 
 Using a PLAYER account:
 
@@ -1512,9 +1507,21 @@ curl -i http://bc.localhost:8000/player/
 Expected:
 
 * HTTP 200
-* Summary cards visible (profile, availability, contact requests)
+* Navigation to profile, availability, and contact requests
 * No other players’ data visible
-* Links correctly call existing API endpoints
+
+Additional pages:
+
+```bash
+curl -i http://bc.localhost:8000/player/profile/
+curl -i http://bc.localhost:8000/player/availability/
+curl -i http://bc.localhost:8000/player/requests/
+```
+
+Expected:
+
+* Each page returns HTTP 200
+* Availability page shows committed banner when applicable
 
 Unauthenticated access:
 
@@ -1528,7 +1535,7 @@ Expected:
 
 ---
 
-### 60. Coach Dashboard (Role-Gated)
+### 69. Coach Dashboard (Role-Gated)
 
 Using an approved COACH account:
 
@@ -1541,6 +1548,20 @@ Expected:
 * HTTP 200
 * Coach-specific content rendered
 * Only permitted teams / open players visible
+
+Additional pages:
+
+```bash
+curl -i http://bc.localhost:8000/coach/teams/
+curl -i http://bc.localhost:8000/coach/open-players/
+curl -i http://bc.localhost:8000/coach/requests/
+curl -i http://bc.localhost:8000/coach/requests/new/
+```
+
+Expected:
+
+* Each page returns HTTP 200
+* Open players list respects allow-list filtering
 
 Non-coach access:
 
@@ -1555,7 +1576,30 @@ Expected:
 
 ---
 
-### 61. UI Permission Fail-Safe
+### 70. Web Form Workflows
+
+Player availability:
+
+Expected:
+
+* Can toggle Open status
+* Can set positions/levels/expiry
+* Can update allow-listed teams (region-scoped only)
+* Committed toggle works (committed players are hidden)
+
+---
+
+Coach contact requests:
+
+Expected:
+
+* Coach can create a request for a player they are allowed to view
+* Player can approve/decline the request in their inbox
+* Requests list shows status updates
+
+---
+
+### 71. UI Permission Fail-Safe
 
 Manually force an unauthorized state (e.g. player accessing coach page).
 
@@ -1567,7 +1611,7 @@ Expected:
 
 ---
 
-### 62. Mobile Responsiveness (Manual)
+### 72. Mobile Responsiveness (Manual)
 
 Using browser dev tools or a phone:
 

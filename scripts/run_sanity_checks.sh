@@ -561,13 +561,13 @@ check_http 201 http://localhost:8000/api/v1/contact-requests/ \
   -d "{\"player_id\":${DEMO_PLAYER_ID},\"requesting_team_id\":${DEMO_TEAM_ID},\"message\":\"Seed demo contact.\"}"
 
 echo
-echo "All sanity checks passed."
+echo "All sanity checks passed through Prompt #10."
 
 print_step 34 "Isolation Tests (Suite)" "Prompt #11"
 check_command_success "permission/isolation tests pass" python manage.py test
 
 echo
-echo "All sanity checks passed (including Prompt #11)."
+echo "All sanity checks passed through Prompt #11."
 
 # -----------------------------------------------------------------------------
 # Prompt #12 — Web UI (Bootstrap, responsive templates, dashboards)
@@ -690,10 +690,51 @@ fi
 
 ############################################
 
-print_step 35 "Landing Page (Public)" "Prompt #13"
+print_step 44 "Web UI Fixture Setup" "Prompt #13"
+check_command_success "web UI fixtures ready" \
+  python - <<'PY'
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.contrib.auth import get_user_model
+from availability.models import PlayerAvailability
+from contacts.models import ContactRequest
+from organizations.models import Team
+from profiles.models import PlayerProfile
+from regions.models import Region
+
+User = get_user_model()
+
+player_user = os.environ.get("SANITY_PLAYER_USERNAME")
+team_id = int(os.environ.get("SANITY_TEAM_ID", "0"))
+
+player = User.objects.get(username=player_user)
+team = Team.objects.get(id=team_id)
+region = Region.objects.get(code="bc")
+
+profile, _ = PlayerProfile.objects.get_or_create(user=player)
+if not profile.display_name:
+    profile.display_name = "Sanity Player"
+    profile.save(update_fields=["display_name"])
+
+availability, _ = PlayerAvailability.objects.get_or_create(player=player, defaults={"region": region})
+availability.region = region
+availability.is_open = True
+availability.is_committed = False
+availability.expires_at = None
+availability.save(update_fields=["region", "is_open", "is_committed", "expires_at"])
+availability.allowed_teams.set([team.id])
+
+ContactRequest.objects.filter(player=player, requesting_team=team).delete()
+PY
+
+print_step 45 "Landing Page (Public)" "Prompt #13"
 check_http 200 http://bc.localhost:8000/
 
-print_step 36 "Landing Page Mobile Viewport" "Prompt #13"
+print_step 46 "Landing Page Mobile Viewport" "Prompt #13"
 viewport_check=$(curl -s http://bc.localhost:8000/ | grep -i "viewport" || true)
 if [[ -n "$viewport_check" ]]; then
   report "viewport meta tag present" "found" "yes"
@@ -702,13 +743,13 @@ else
   exit 1
 fi
 
-print_step 37 "Public Tryouts Page (Web UI)" "Prompt #13"
+print_step 47 "Public Tryouts Page (Web UI)" "Prompt #13"
 check_http 200 http://bc.localhost:8000/tryouts/
 
-print_step 38 "Tryout Detail (Region Isolated)" "Prompt #13"
+print_step 48 "Tryout Detail (Region Isolated)" "Prompt #13"
 check_http 200 "http://bc.localhost:8000/tryouts/${SANITY_TRYOUT_ID}/"
 
-print_step 39 "Tryout Detail Cross-Region Block" "Prompt #13"
+print_step 49 "Tryout Detail Cross-Region Block" "Prompt #13"
 cross_region_code=$(curl -s -o /dev/null -w "%{http_code}" \
   -H "Host: on.localhost:8000" \
   "http://localhost:8000/tryouts/${SANITY_TRYOUT_ID}/")
@@ -719,14 +760,14 @@ else
   exit 1
 fi
 
-print_step 40 "Login Page" "Prompt #13"
+print_step 50 "Login Page" "Prompt #13"
 check_http 200 http://bc.localhost:8000/accounts/login/
 
-print_step 41 "Dashboard Redirect (Anonymous)" "Prompt #13"
+print_step 51 "Dashboard Redirect (Anonymous)" "Prompt #13"
 check_http "302|301" http://bc.localhost:8000/dashboard/
 
-print_step 42 "Player/Coach Role Gates" "Prompt #13"
-check_command_success "player/coach web access correct" \
+print_step 52 "Player & Coach Web Flows" "Prompt #13"
+check_command_success "player/coach web flows work" \
   python - <<'PY'
 import os
 import django
@@ -734,51 +775,94 @@ import django
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
 django.setup()
 
+from django.contrib.auth import get_user_model
 from django.test import Client
+from availability.models import PlayerAvailability
+from contacts.models import ContactRequest
+from organizations.models import Team
+
+User = get_user_model()
 
 player_user = os.environ.get("SANITY_PLAYER_USERNAME")
 player_pass = os.environ.get("SANITY_PLAYER_PASSWORD")
 coach_user = os.environ.get("SANITY_COACH_USERNAME")
 coach_pass = os.environ.get("SANITY_COACH_PASSWORD")
+team_id = int(os.environ.get("SANITY_TEAM_ID", "0"))
 
-assert player_user and player_pass and coach_user and coach_pass
+player = User.objects.get(username=player_user)
+coach = User.objects.get(username=coach_user)
+team = Team.objects.get(id=team_id)
 
 client = Client(HTTP_HOST="bc.localhost")
 assert client.login(username=player_user, password=player_pass)
 resp = client.get("/player/profile/")
 assert resp.status_code == 200, f"player profile expected 200, got {resp.status_code}"
-resp = client.get("/coach/")
-assert resp.status_code in (302, 403), f"player should be blocked from coach, got {resp.status_code}"
+resp = client.get("/player/availability/")
+assert resp.status_code == 200, f"player availability expected 200, got {resp.status_code}"
+
+resp = client.post(
+    "/player/availability/",
+    {
+        "is_open": "on",
+        "positions": ["OF"],
+        "levels": ["AAA"],
+        "allowed_teams": [team.id],
+    },
+)
+assert resp.status_code in (302, 303), f"availability update expected redirect, got {resp.status_code}"
+
+resp = client.post("/player/availability/commit/", {"action": "commit"})
+assert resp.status_code in (302, 303), f"commit expected redirect, got {resp.status_code}"
+availability = PlayerAvailability.objects.get(player=player)
+assert availability.is_committed is True and availability.is_open is False
+
+resp = client.post("/player/availability/commit/", {"action": "uncommit"})
+assert resp.status_code in (302, 303), f"uncommit expected redirect, got {resp.status_code}"
+availability.refresh_from_db()
+assert availability.is_committed is False
+availability.is_open = True
+availability.save(update_fields=["is_open"])
 
 client = Client(HTTP_HOST="bc.localhost")
 assert client.login(username=coach_user, password=coach_pass)
 resp = client.get("/coach/")
 assert resp.status_code == 200, f"coach dashboard expected 200, got {resp.status_code}"
-resp = client.get("/player/profile/")
-assert resp.status_code in (302, 403), f"coach should be blocked from player, got {resp.status_code}"
+resp = client.get("/coach/teams/")
+assert resp.status_code == 200, f"coach teams expected 200, got {resp.status_code}"
+resp = client.get("/coach/open-players/")
+assert resp.status_code == 200, f"coach open players expected 200, got {resp.status_code}"
+resp = client.get("/coach/requests/new/")
+assert resp.status_code == 200, f"new request form expected 200, got {resp.status_code}"
 
-print("ok")
-PY
+resp = client.post(
+    "/coach/requests/new/",
+    {"player": str(player.id), "requesting_team": team.id, "message": "Sanity request"},
+)
+assert resp.status_code in (302, 303), f"request create expected redirect, got {resp.status_code}"
 
-print_step 43 "Coach Open Players Page" "Prompt #13"
-check_command_success "coach open players loads" \
-  python - <<'PY'
-import os
-import django
+request_obj = ContactRequest.objects.filter(player=player, requesting_team=team).order_by("-created_at").first()
+assert request_obj is not None, "request not created"
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
-django.setup()
+client = Client(HTTP_HOST="bc.localhost")
+assert client.login(username=player_user, password=player_pass)
+resp = client.get("/player/requests/")
+assert resp.status_code == 200, f"player requests expected 200, got {resp.status_code}"
 
-from django.test import Client
+resp = client.post(f"/player/requests/{request_obj.id}/respond/", {"status": "approved"})
+assert resp.status_code in (302, 303), f"request respond expected redirect, got {resp.status_code}"
+request_obj.refresh_from_db()
+assert request_obj.status == "approved"
 
-coach_user = os.environ.get("SANITY_COACH_USERNAME")
-coach_pass = os.environ.get("SANITY_COACH_PASSWORD")
-assert coach_user and coach_pass
+client = Client(HTTP_HOST="bc.localhost")
+assert client.login(username=player_user, password=player_pass)
+resp = client.get("/coach/")
+assert resp.status_code in (302, 403), f"player should be blocked from coach, got {resp.status_code}"
 
 client = Client(HTTP_HOST="bc.localhost")
 assert client.login(username=coach_user, password=coach_pass)
-resp = client.get("/coach/open-players/")
-assert resp.status_code == 200, f"open players expected 200, got {resp.status_code}"
+resp = client.get("/player/profile/")
+assert resp.status_code in (302, 403), f"coach should be blocked from player, got {resp.status_code}"
+
 print("ok")
 PY
 
