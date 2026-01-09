@@ -156,8 +156,7 @@ def get_or_create_user(username, password, is_staff=False):
         username=username,
         defaults={"email": f"{username}@example.com"},
     )
-    if created:
-        user.set_password(password)
+    user.set_password(password)
     if is_staff:
         user.is_staff = True
         user.is_superuser = True
@@ -225,15 +224,15 @@ ContactRequest.objects.filter(
     requesting_team=team_bc,
 ).delete()
 
-print(f"SANITY_ADMIN_USERNAME={ADMIN_USERNAME}")
-print(f"SANITY_ADMIN_PASSWORD={ADMIN_PASSWORD}")
-print(f"SANITY_PLAYER_USERNAME={PLAYER_USERNAME}")
-print(f"SANITY_PLAYER_PASSWORD={PLAYER_PASSWORD}")
-print(f"SANITY_COACH_USERNAME={COACH_USERNAME}")
-print(f"SANITY_COACH_PASSWORD={COACH_PASSWORD}")
-print(f"SANITY_PLAYER_ID={player.id}")
-print(f"SANITY_TEAM_ID={team_bc.id}")
-print(f"SANITY_TRYOUT_ID={tryout.id}")
+print(f"export SANITY_ADMIN_USERNAME={ADMIN_USERNAME}")
+print(f"export SANITY_ADMIN_PASSWORD={ADMIN_PASSWORD}")
+print(f"export SANITY_PLAYER_USERNAME={PLAYER_USERNAME}")
+print(f"export SANITY_PLAYER_PASSWORD={PLAYER_PASSWORD}")
+print(f"export SANITY_COACH_USERNAME={COACH_USERNAME}")
+print(f"export SANITY_COACH_PASSWORD={COACH_PASSWORD}")
+print(f"export SANITY_PLAYER_ID={player.id}")
+print(f"export SANITY_TEAM_ID={team_bc.id}")
+print(f"export SANITY_TRYOUT_ID={tryout.id}")
 PY
 )
 
@@ -247,7 +246,7 @@ fi
 
 print_step 5 "Start Server + Health/Auth Checks" "Prompt #1"
 expected="server starts and responds to health check"
-python manage.py runserver 8000 >/tmp/portal_runserver.log 2>&1 &
+python manage.py runserver 8000 --noreload >/tmp/portal_runserver.log 2>&1 &
 SERVER_PID=$!
 
 for i in {1..20}; do
@@ -560,6 +559,121 @@ check_http 201 http://localhost:8000/api/v1/contact-requests/ \
   -H "Content-Type: application/json" \
   -H "Host: bc.localhost:8000" \
   -d "{\"player_id\":${DEMO_PLAYER_ID},\"requesting_team_id\":${DEMO_TEAM_ID},\"message\":\"Seed demo contact.\"}"
+
+
+
+# -----------------------------------------------------------------------------
+# Prompt #12 — Web UI (Bootstrap, responsive templates, dashboards)
+# Append-only section: add new checks AFTER Prompt #11.
+# -----------------------------------------------------------------------------
+
+print_step 35 "Web UI: Landing Page" "Prompt #12"
+check_http 200 http://bc.localhost:8000/
+
+print_step 36 "Web UI: Tryouts List" "Prompt #12"
+check_http 200 http://bc.localhost:8000/tryouts/
+
+print_step 37 "Web UI: Tryouts Detail (BC)" "Prompt #12"
+check_http 200 "http://bc.localhost:8000/tryouts/${SANITY_TRYOUT_ID}/"
+
+print_step 38 "Web UI: Region Isolation (Tryouts Detail should not leak)" "Prompt #12"
+# Same ID under a different host must NOT show BC tryout.
+# Depending on implementation, could be 404 or a redirect back to list.
+check_http "404|302" "http://localhost:8000/tryouts/${SANITY_TRYOUT_ID}/" \
+  -H "Host: on.localhost:8000"
+
+print_step 39 "Web UI: Mobile Viewport Meta Present" "Prompt #12"
+# Basic check that templates are mobile-aware (Bootstrap requires viewport meta).
+# We check the homepage HTML contains the viewport meta tag.
+expected="<meta name=\"viewport\""
+set +e
+curl -s http://bc.localhost:8000/ | grep -q "<meta name=\"viewport\"" 
+viewport_status=$?
+set -e
+if [[ $viewport_status -eq 0 ]]; then
+  report "$expected" "found" "yes"
+else
+  report "$expected" "missing" "no"
+  exit 1
+fi
+
+print_step 40 "Web UI: Login Page Loads" "Prompt #12"
+# The project may use /accounts/login/ or /login/ depending on urlconf.
+# Try both and accept whichever exists.
+login_code_a=$(curl -s -o "$TMP_BODY" -w "%{http_code}" http://bc.localhost:8000/accounts/login/)
+login_code_b=$(curl -s -o "$TMP_BODY" -w "%{http_code}" http://bc.localhost:8000/login/)
+expected="HTTP 200 for /accounts/login/ OR /login/"
+result="/accounts/login/=$login_code_a, /login/=$login_code_b"
+if [[ "$login_code_a" == "200" || "$login_code_b" == "200" ]]; then
+  report "$expected" "$result" "yes"
+else
+  report "$expected" "$result" "no"
+  exit 1
+fi
+
+print_step 41 "Web UI: Dashboard Routing (role-aware)" "Prompt #12"
+# Use Django test client so we can do a real login + follow redirects.
+# This avoids dealing with cookies/CSRF in curl.
+check_command_success "dashboard redirects to /player/ for player and /coach/ for coach" \
+  python - <<'PY'
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.test import Client
+
+player_user = os.environ.get("SANITY_PLAYER_USERNAME")
+player_pass = os.environ.get("SANITY_PLAYER_PASSWORD")
+coach_user = os.environ.get("SANITY_COACH_USERNAME")
+coach_pass = os.environ.get("SANITY_COACH_PASSWORD")
+
+assert player_user and player_pass and coach_user and coach_pass
+
+# Player -> /dashboard/ should land on /player/
+client = Client(HTTP_HOST="bc.localhost")
+logged_in = client.login(username=player_user, password=player_pass)
+assert logged_in, "player login failed"
+resp = client.get("/dashboard/", follow=False)
+assert resp.status_code in (302, 301), f"expected redirect for player, got {resp.status_code}"
+loc = resp.get("Location", "")
+assert "/player" in loc, f"expected player dashboard redirect, got Location={loc}"
+
+# Coach -> /dashboard/ should land on /coach/
+client = Client(HTTP_HOST="bc.localhost")
+logged_in = client.login(username=coach_user, password=coach_pass)
+assert logged_in, "coach login failed"
+resp = client.get("/dashboard/", follow=False)
+assert resp.status_code in (302, 301), f"expected redirect for coach, got {resp.status_code}"
+loc = resp.get("Location", "")
+assert "/coach" in loc, f"expected coach dashboard redirect, got Location={loc}"
+
+print("ok")
+PY
+
+print_step 42 "Web UI: Anonymous Dashboard Requires Login" "Prompt #12"
+# Anonymous users should be redirected to login.
+# Location may include ?next=/dashboard/
+check_http "302|301" http://bc.localhost:8000/dashboard/
+
+print_step 43 "Web UI: Tryouts Page Contains Seeded Content" "Prompt #12"
+# Soft check that UI list renders something meaningful.
+# If seed_demo ran, the demo tryout name should be present.
+set +e
+curl -s http://bc.localhost:8000/tryouts/ | grep -q "Tryout" 
+tryout_grep_status=$?
+set -e
+if [[ $tryout_grep_status -eq 0 ]]; then
+  report "Tryouts list contains visible content" "found 'Tryout'" "yes"
+else
+  report "Tryouts list contains visible content" "no obvious content" "no"
+  exit 1
+fi
+
+# End of Prompt #12 section
+
+
 
 echo
 echo "All sanity checks passed."

@@ -1162,3 +1162,227 @@ You may proceed only if:
 ---
 
 **After Prompt #11, the MVP is considered permission-complete and security-stable.**
+
+## Sanity Check — After Prompt #12 (Web UI Foundation + Mobile-Friendly UI)
+
+These checks verify that the initial **Web UI layer** is:
+
+* professional-looking
+* mobile-friendly
+* region-aware
+* role-aware
+* does NOT weaken backend permissions or isolation guarantees
+
+This prompt introduces **read-only and navigational UI only** (no new business logic).
+
+---
+
+### 53. Migrate, Seed, and Run Server
+
+```bash
+python manage.py migrate
+python manage.py seed_demo
+python manage.py runserver
+```
+
+Expected:
+
+* Server starts without errors
+* Static files load correctly
+* No template errors or missing static warnings
+
+---
+
+### 54. Landing Page & Navigation (Public)
+
+Visit:
+
+```
+http://bc.localhost:8000/
+```
+
+Expected:
+
+* Page loads successfully
+* Professional layout (header, hero, spacing, typography)
+* Navigation bar visible
+* No authentication required
+* Page is readable at both desktop and mobile widths
+
+Mobile sanity:
+
+* Resize browser to narrow width
+* Navbar collapses correctly
+* No horizontal scrolling
+* Tap targets are usable
+
+---
+
+### 55. Public Tryouts — Web UI (Region-Scoped)
+
+Visit:
+
+```
+http://bc.localhost:8000/tryouts/
+```
+
+Expected:
+
+* List of tryouts rendered as cards
+* Only BC-region tryouts appear
+* Layout remains readable on mobile
+* Clicking a tryout navigates to its detail page
+
+Try detail view:
+
+```
+http://bc.localhost:8000/tryouts/<id>/
+```
+
+Expected:
+
+* Page loads successfully
+* Correct tryout details shown
+* No cross-region data leakage
+
+---
+
+### 56. Cross-Region Isolation (Web UI)
+
+If another region exists (e.g. `on`):
+
+```
+http://on.localhost:8000/tryouts/
+```
+
+Expected:
+
+* No BC tryouts visible
+* Either empty list or region-appropriate data only
+
+Direct detail access under wrong region:
+
+```
+http://on.localhost:8000/tryouts/<bc_tryout_id>/
+```
+
+Expected:
+
+* 404 or access blocked
+* No BC data rendered
+
+---
+
+### 57. Authentication UI
+
+Visit:
+
+```
+http://bc.localhost:8000/accounts/login/
+```
+
+Expected:
+
+* Login page loads correctly
+* Form is usable on mobile
+* No styling regressions
+
+Log in using seeded credentials.
+
+Expected:
+
+* Successful login
+* Redirects to `/dashboard/`
+
+---
+
+### 58. Role-Aware Dashboard Routing
+
+After login, visit:
+
+```
+http://bc.localhost:8000/dashboard/
+```
+
+Expected redirect behavior:
+
+* Player → `/player/`
+* Coach → `/coach/`
+* Admin → `/admin/`
+
+Expected:
+
+* No permission errors
+* No infinite redirects
+* Placeholder dashboards render without error
+
+---
+
+### 59. Unauthorized Access Protection (Web UI)
+
+While logged in as a **player**:
+
+* Attempt to visit `/coach/`
+
+Expected:
+
+* Access denied OR redirect to dashboard
+* No coach-specific content rendered
+
+While logged in as a **coach**:
+
+* Attempt to visit `/player/`
+
+Expected:
+
+* Access denied OR redirect to dashboard
+
+---
+
+### 60. UI Does Not Bypass API Permissions
+
+Sanity assertion:
+
+* Web UI pages do NOT expose:
+
+  * Open player search results
+  * Contact request creation
+  * Player availability of others
+* All sensitive operations remain API-gated and permission-protected
+
+Expected:
+
+* UI is navigation + display only
+* No backend permission regressions
+
+---
+
+### 61. Run Tests (Including UI Tests)
+
+```bash
+python manage.py test
+```
+
+Expected:
+
+* All tests pass
+* Web UI region-isolation test passes
+* No regressions in API or permission tests
+
+---
+
+### Exit Gate — Prompt #12
+
+You may proceed to **Prompt #13 (Player Web UI: Profile, Availability, Allow-List, Inbox)** only if:
+
+* All Prompt #1–#11 checks remain green
+* Web UI renders correctly on desktop and mobile
+* Public tryouts are region-scoped in the UI
+* Login and dashboard routing are role-aware
+* No backend permissions or isolation guarantees are weakened
+* Changes are committed
+
+---
+
+**After Prompt #12, the project has a professional, mobile-friendly UI shell suitable for real users.**
+
