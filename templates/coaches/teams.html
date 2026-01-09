@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}My Teams | BC Baseball Transfer Portal{% endblock %}
+
+{% block content %}
+  {% if memberships %}
+    <div class="row g-3">
+      {% for membership in memberships %}
+        <div class="col-12 col-md-6">
+          <div class="card shadow-sm h-100">
+            <div class="card-body p-4">
+              <h2 class="h5 mb-2">{{ membership.team.name }}</h2>
+              <p class="text-muted mb-1">{{ membership.team.association.name }}</p>
+              <p class="mb-0">Age group: {{ membership.team.age_group }}{% if membership.team.level %} · {{ membership.team.level }}{% endif %}</p>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% include "partials/_empty_state.html" with title="No teams assigned" description="Once you are added to a team, it will appear here." %}
+  {% endif %}
+{% endblock %}

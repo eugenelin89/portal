@@ -5,11 +5,13 @@
 {% block content %}
   <div class="card shadow-sm">
     <div class="card-body p-4">
-      <h1 class="h4 mb-2">Coach Dashboard (Coming next)</h1>
-      <p class="text-muted mb-4">Next up: roster requests, tryout posting, and coach approvals.</p>
-      <div class="d-flex flex-column flex-md-row gap-2">
-        <a class="btn btn-outline-primary" href="{% url 'tryout_list' %}">Review tryouts</a>
-        <a class="btn btn-outline-secondary" href="{% url 'home' %}">Return home</a>
+      <h1 class="h4 mb-2">Coach Dashboard</h1>
+      <p class="text-muted mb-4">Track your teams, open players, and contact requests.</p>
+      <div class="d-flex flex-column flex-md-row gap-2 flex-wrap">
+        <a class="btn btn-primary" href="{% url 'coach_teams' %}">My teams</a>
+        <a class="btn btn-outline-primary" href="{% url 'coach_open_players' %}">Open players</a>
+        <a class="btn btn-outline-secondary" href="{% url 'coach_requests' %}">Sent requests</a>
+        <a class="btn btn-outline-secondary" href="{% url 'tryout_list' %}">Review tryouts</a>
       </div>
     </div>
   </div>

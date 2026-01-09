@@ -59,6 +59,10 @@ body {
   min-height: 44px;
 }
 
+.form-select[multiple] {
+  min-height: 140px;
+}
+
 .btn-lg {
   min-height: 50px;
 }

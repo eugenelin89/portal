@@ -1336,3 +1336,277 @@ After implementation:
 python manage.py migrate
 python manage.py seed_demo
 python manage.py runserver
+
+---
+
+## Prompt 013 — Web UI: Player & Coach Workflows (Mobile-First, Professional)
+
+**Date:** 2026-01-08
+**Tasks:** CODEX_TASKS.md — *(Web UI phase: Player + Coach core flows; no new backend features)*
+
+---
+
+### Prompt
+
+You are working in the existing **BC Baseball Transfer Portal** Django repository.
+
+**Prompt #12 has already added**:
+
+* Bootstrap-based responsive base templates
+* Landing page
+* Login/logout
+* Tryouts list/detail pages
+* Placeholder player/coach dashboards
+* Role-aware `/dashboard/` routing
+
+Now implement **Prompt #13**: the first *real* end-to-end Web UI workflows for **players** and **coaches**, using **existing models and APIs only**.
+
+This prompt is **UI + server-rendered Django views only** (templates, forms, views).
+
+❗ **Do NOT add new models or new API endpoints** unless required to fix a bug or an existing test failure.
+
+---
+
+## Goal
+
+Deliver a professional-looking, **mobile-first** web UI where real users can complete the core MVP flows.
+
+### Player can
+
+1. Edit their **PlayerProfile**
+
+   * `display_name`
+   * `birth_year`
+   * `positions`
+   * `bats`, `throws`
+
+2. Manage **Availability / Open status**
+
+   * Toggle `is_open`
+   * Set positions / levels
+   * Optional `expires_at`
+   * Manage allow-listed teams
+
+3. Toggle **Committed** status
+
+   * Committed players are not discoverable
+   * UI must clearly indicate committed state
+
+4. View and respond to **incoming ContactRequests**
+
+   * Approve
+   * Decline
+
+---
+
+### Coach can
+
+1. View **My Teams** (via `TeamCoach`)
+2. Search **Open Players** they are allowed to see (allow-list enforced)
+3. Send **ContactRequests** to an Open player
+
+   * Only for teams they coach
+4. View **sent contact requests** and their statuses
+
+---
+
+## Constraints (MVP-safe)
+
+* Keep templates clean and consistent with Prompt #12 design system
+* Use **Bootstrap** + existing `app.css`
+* Server-rendered pages only (no SPA)
+* Minimal JavaScript (only where necessary)
+* No new feature scope (no chat, messaging, public directories)
+* Respect all existing permission and isolation rules
+
+---
+
+## Implementation Requirements
+
+### 1. Web Routes (Server-rendered)
+
+Add or extend routes using existing `web_views.py` pattern.
+
+#### Player routes
+
+* `GET /player/profile/`
+
+* `POST /player/profile/`
+
+* `GET /player/availability/`
+
+* `POST /player/availability/`
+
+* `POST /player/availability/commit/`
+
+* `GET /player/requests/`
+
+* `POST /player/requests/<id>/respond/`
+
+#### Coach routes
+
+* `GET /coach/teams/`
+
+* `GET /coach/open-players/`
+
+* `GET /coach/open-players/<player_id>/`
+
+* `GET /coach/requests/`
+
+* `GET /coach/requests/new/`
+
+* `POST /coach/requests/new/`
+
+Also ensure:
+
+* `/dashboard/` continues to route correctly by role
+* Login redirects to `/dashboard/`
+
+---
+
+### 2. Page Design (Professional + Mobile-Friendly)
+
+All pages must:
+
+* Extend `base.html`
+
+* Use a consistent top navigation:
+
+  * Left: site name + region label (e.g. "BC")
+  * Right: username + logout
+  * Mobile: collapsible navbar
+
+* Use card-based layout for content
+
+* Be readable and tappable on mobile
+
+Add reusable partial templates:
+
+* `_page_header.html`
+* `_form_errors.html`
+* `_empty_state.html`
+* `_badge.html` (optional)
+* `_pagination.html` (optional)
+
+---
+
+### 3. Forms & Validation
+
+Use Django `Form` or `ModelForm` classes.
+
+Forms required:
+
+* PlayerProfile form
+* PlayerAvailability form
+* ContactRequest form (coach)
+
+Validation rules:
+
+* Player-only pages require role = PLAYER
+
+* Coach pages require role = COACH **and approved coach**
+
+* Coach must be linked to the requesting team
+
+* When committed is true:
+
+  * Show a committed banner
+  * Disable or auto-close Open toggle
+
+* `expires_at` must be in the future if provided
+
+Allow-list team selection:
+
+* Teams must be in the **current region only**
+* Use a mobile-friendly multi-select
+* Include helper text explaining visibility
+
+---
+
+### 4. Data Access Strategy
+
+* Prefer Django ORM directly for web views
+* All queries must be region-scoped
+* Reuse permission logic patterns from API code
+
+Calling internal API endpoints is allowed but not required.
+
+---
+
+### 5. Permissions / Guards (Web)
+
+Implement or reuse helpers such as:
+
+* `require_player(view)`
+* `require_approved_coach(view)`
+* `require_region_object(obj.region == request.region)`
+
+All data access must enforce:
+
+* Role isolation
+* Team isolation
+* Region isolation
+
+---
+
+### 6. Tests (Minimal but Real)
+
+Add Django web tests covering:
+
+* Player blocked from coach pages
+* Coach blocked from player pages
+* Coach open-player list respects allow-list
+* Coach cannot create requests for unassigned teams
+* Cross-region access returns 404 or empty
+
+Keep tests minimal and stable.
+
+---
+
+### 7. Manual Browser Checklist (Must Pass)
+
+After running `seed_demo`:
+
+* Player login → dashboard → profile edit works
+* Player availability edit works
+* Player can approve/decline contact requests
+* Coach login → teams page shows membership
+* Coach open-player search respects allow-list
+* Coach can create contact requests
+
+Test at:
+
+* Mobile (375px)
+* Tablet (768px)
+* Desktop
+
+---
+
+## Deliverables
+
+* Updated URLs and web views
+* New templates and partials
+* Django forms
+* Mobile-friendly CSS refinements
+* Web tests added
+* All tests passing
+
+---
+
+## After Implementation — Summarize
+
+1. Pages added
+2. Browser workflows now supported
+3. Security guarantees enforced
+4. Suggested next step (Prompt #14)
+
+---
+
+### Expected Outcome
+
+The portal is **actually usable** via web UI:
+
+* Families can manage player status
+* Coaches can discover and contact players
+* Privacy, region, and team isolation remain strict
+* UI looks professional on desktop and mobile

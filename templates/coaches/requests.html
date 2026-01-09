@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Sent Requests | BC Baseball Transfer Portal{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-end mb-3">
+    <a class="btn btn-primary" href="{% url 'coach_request_new' %}">New request</a>
+  </div>
+  {% if requests %}
+    <div class="vstack gap-3">
+      {% for request_item in requests %}
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+              <div>
+                <h2 class="h5 mb-1">{{ request_item.requesting_team.name }}</h2>
+                <p class="text-muted mb-2">Player: {{ request_item.player.username }}</p>
+                {% if request_item.message %}
+                  <p class="mb-0">{{ request_item.message }}</p>
+                {% endif %}
+              </div>
+              <div class="d-flex flex-column align-items-md-end gap-2">
+                {% if request_item.status == "pending" %}
+                  {% include "partials/_badge.html" with label="Pending" badge_class="text-bg-warning" %}
+                {% elif request_item.status == "approved" %}
+                  {% include "partials/_badge.html" with label="Approved" badge_class="text-bg-success" %}
+                {% else %}
+                  {% include "partials/_badge.html" with label="Declined" badge_class="text-bg-secondary" %}
+                {% endif %}
+                {% if request_item.responded_at %}
+                  <small class="text-muted">Responded {{ request_item.responded_at|date:"M j, Y" }}</small>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% url 'coach_request_new' as new_request_url %}
+    {% include "partials/_empty_state.html" with title="No requests yet" description="Start by reaching out to an open player." action_url=new_request_url action_label="New request" %}
+  {% endif %}
+{% endblock %}

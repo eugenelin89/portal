@@ -11,7 +11,12 @@
 <body>
   <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom">
     <div class="container">
-      <a class="navbar-brand fw-semibold" href="{% url 'home' %}">BC Baseball Transfer Portal</a>
+      <a class="navbar-brand fw-semibold d-flex align-items-center gap-2" href="{% url 'home' %}">
+        <span>BC Baseball Transfer Portal</span>
+        <span class="badge text-bg-light border text-uppercase">
+          {{ request.region_code|default:"bc"|upper }}
+        </span>
+      </a>
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
         <span class="navbar-toggler-icon"></span>
       </button>
@@ -31,8 +36,9 @@
             </li>
           {% endif %}
         </ul>
-        <div class="d-flex gap-2">
+        <div class="d-flex align-items-center gap-2">
           {% if user.is_authenticated %}
+            <span class="navbar-text small text-muted">{{ user.username }}</span>
             <form method="post" action="{% url 'logout' %}">
               {% csrf_token %}
               <button class="btn btn-outline-secondary" type="submit">Log out</button>
@@ -65,19 +71,7 @@
     {% endif %}
 
     {% block page_header %}
-      {% if page_title %}
-        <div class="page-header d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-2">
-          <div>
-            <h1 class="h3 mb-1">{{ page_title }}</h1>
-            {% if page_subtitle %}
-              <p class="text-muted mb-0">{{ page_subtitle }}</p>
-            {% endif %}
-          </div>
-          {% if page_actions %}
-            <div class="page-actions">{{ page_actions }}</div>
-          {% endif %}
-        </div>
-      {% endif %}
+      {% include "partials/_page_header.html" %}
     {% endblock %}
 
     {% block content %}{% endblock %}

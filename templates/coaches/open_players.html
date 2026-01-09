@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Open Players | BC Baseball Transfer Portal{% endblock %}
+
+{% block content %}
+  {% if players %}
+    <div class="row g-3">
+      {% for item in players %}
+        <div class="col-12">
+          <div class="card shadow-sm">
+            <div class="card-body p-4">
+              <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+                <div>
+                  <h2 class="h5 mb-1">
+                    {% if item.profile and item.profile.display_name %}
+                      {{ item.profile.display_name }}
+                    {% else %}
+                      {{ item.availability.player.username }}
+                    {% endif %}
+                  </h2>
+                  {% if item.profile and item.profile.birth_year %}
+                    <p class="text-muted mb-2">Birth year {{ item.profile.birth_year }}</p>
+                  {% endif %}
+                  <div class="d-flex flex-wrap gap-2">
+                    {% for position in item.availability.positions %}
+                      {% include "partials/_badge.html" with label=position badge_class="text-bg-primary" %}
+                    {% endfor %}
+                    {% for level in item.availability.levels %}
+                      {% include "partials/_badge.html" with label=level badge_class="text-bg-secondary" %}
+                    {% endfor %}
+                  </div>
+                </div>
+                <div class="d-flex flex-column gap-2">
+                  <a class="btn btn-outline-primary" href="{% url 'coach_open_player_detail' item.availability.player.id %}">View details</a>
+                  <a class="btn btn-primary" href="{% url 'coach_request_new' %}?player_id={{ item.availability.player.id }}">Request contact</a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% include "partials/_empty_state.html" with title="No open players" description="Players will appear here when they allow your teams to view their availability." %}
+  {% endif %}
+{% endblock %}

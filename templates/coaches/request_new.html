@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}New Contact Request | BC Baseball Transfer Portal{% endblock %}
+
+{% block content %}
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-7">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          {% include "partials/_form_errors.html" %}
+          {% if has_players %}
+            <form method="post">
+              {% csrf_token %}
+              <div class="mb-3">
+                <label class="form-label" for="id_player">Player</label>
+                {{ form.player }}
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="id_requesting_team">Requesting team</label>
+                {{ form.requesting_team }}
+              </div>
+              <div class="mb-3">
+                <label class="form-label" for="id_message">Message (optional)</label>
+                {{ form.message }}
+              </div>
+              <div class="d-flex flex-column flex-sm-row gap-2">
+                <button class="btn btn-primary" type="submit">Send request</button>
+                <a class="btn btn-outline-secondary" href="{% url 'coach_requests' %}">Back to requests</a>
+              </div>
+            </form>
+          {% else %}
+            {% include "partials/_empty_state.html" with title="No available players" description="Players must allow your team before you can request contact." %}
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}
