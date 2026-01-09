@@ -560,7 +560,14 @@ check_http 201 http://localhost:8000/api/v1/contact-requests/ \
   -H "Host: bc.localhost:8000" \
   -d "{\"player_id\":${DEMO_PLAYER_ID},\"requesting_team_id\":${DEMO_TEAM_ID},\"message\":\"Seed demo contact.\"}"
 
+echo
+echo "All sanity checks passed."
 
+print_step 34 "Isolation Tests (Suite)" "Prompt #11"
+check_command_success "permission/isolation tests pass" python manage.py test
+
+echo
+echo "All sanity checks passed (including Prompt #11)."
 
 # -----------------------------------------------------------------------------
 # Prompt #12 — Web UI (Bootstrap, responsive templates, dashboards)
@@ -675,11 +682,105 @@ fi
 
 
 
-echo
-echo "All sanity checks passed."
 
-print_step 34 "Isolation Tests (Suite)" "Prompt #11"
-check_command_success "permission/isolation tests pass" python manage.py test
+
+############################################
+
+# Prompt #13 — Web UI Sanity Checks
+
+############################################
+
+print_step 35 "Landing Page (Public)" "Prompt #13"
+check_http 200 http://bc.localhost:8000/
+
+print_step 36 "Landing Page Mobile Viewport" "Prompt #13"
+viewport_check=$(curl -s http://bc.localhost:8000/ | grep -i "viewport" || true)
+if [[ -n "$viewport_check" ]]; then
+  report "viewport meta tag present" "found" "yes"
+else
+  report "viewport meta tag present" "missing" "no"
+  exit 1
+fi
+
+print_step 37 "Public Tryouts Page (Web UI)" "Prompt #13"
+check_http 200 http://bc.localhost:8000/tryouts/
+
+print_step 38 "Tryout Detail (Region Isolated)" "Prompt #13"
+check_http 200 "http://bc.localhost:8000/tryouts/${SANITY_TRYOUT_ID}/"
+
+print_step 39 "Tryout Detail Cross-Region Block" "Prompt #13"
+cross_region_code=$(curl -s -o /dev/null -w "%{http_code}" \
+  -H "Host: on.localhost:8000" \
+  "http://localhost:8000/tryouts/${SANITY_TRYOUT_ID}/")
+if [[ "$cross_region_code" == "404" || "$cross_region_code" == "302" ]]; then
+  report "cross-region tryout blocked" "HTTP $cross_region_code" "yes"
+else
+  report "cross-region tryout blocked" "HTTP $cross_region_code" "no"
+  exit 1
+fi
+
+print_step 40 "Login Page" "Prompt #13"
+check_http 200 http://bc.localhost:8000/accounts/login/
+
+print_step 41 "Dashboard Redirect (Anonymous)" "Prompt #13"
+check_http "302|301" http://bc.localhost:8000/dashboard/
+
+print_step 42 "Player/Coach Role Gates" "Prompt #13"
+check_command_success "player/coach web access correct" \
+  python - <<'PY'
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.test import Client
+
+player_user = os.environ.get("SANITY_PLAYER_USERNAME")
+player_pass = os.environ.get("SANITY_PLAYER_PASSWORD")
+coach_user = os.environ.get("SANITY_COACH_USERNAME")
+coach_pass = os.environ.get("SANITY_COACH_PASSWORD")
+
+assert player_user and player_pass and coach_user and coach_pass
+
+client = Client(HTTP_HOST="bc.localhost")
+assert client.login(username=player_user, password=player_pass)
+resp = client.get("/player/profile/")
+assert resp.status_code == 200, f"player profile expected 200, got {resp.status_code}"
+resp = client.get("/coach/")
+assert resp.status_code in (302, 403), f"player should be blocked from coach, got {resp.status_code}"
+
+client = Client(HTTP_HOST="bc.localhost")
+assert client.login(username=coach_user, password=coach_pass)
+resp = client.get("/coach/")
+assert resp.status_code == 200, f"coach dashboard expected 200, got {resp.status_code}"
+resp = client.get("/player/profile/")
+assert resp.status_code in (302, 403), f"coach should be blocked from player, got {resp.status_code}"
+
+print("ok")
+PY
+
+print_step 43 "Coach Open Players Page" "Prompt #13"
+check_command_success "coach open players loads" \
+  python - <<'PY'
+import os
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.test import Client
+
+coach_user = os.environ.get("SANITY_COACH_USERNAME")
+coach_pass = os.environ.get("SANITY_COACH_PASSWORD")
+assert coach_user and coach_pass
+
+client = Client(HTTP_HOST="bc.localhost")
+assert client.login(username=coach_user, password=coach_pass)
+resp = client.get("/coach/open-players/")
+assert resp.status_code == 200, f"open players expected 200, got {resp.status_code}"
+print("ok")
+PY
 
 echo
-echo "All sanity checks passed (including Prompt #11)."
+echo "Web UI sanity checks passed (Prompt #13)."

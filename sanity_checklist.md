@@ -1386,3 +1386,208 @@ You may proceed to **Prompt #13 (Player Web UI: Profile, Availability, Allow-Lis
 
 **After Prompt #12, the project has a professional, mobile-friendly UI shell suitable for real users.**
 
+---
+## Sanity Check — After Prompt #13 (Web UI: Player & Coach Core Workflows)
+
+These checks verify that the Web UI is functional, mobile-friendly, role-aware, and safely layered on top of the existing API without bypassing permissions or region isolation.
+
+---
+
+### 53. Migrate & Run Full Test Suite
+
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+
+* No new migrations required
+* All existing API + permission tests still pass
+* New Web UI tests pass
+
+---
+
+### 54. Landing Page (Public)
+
+```bash
+curl -i http://bc.localhost:8000/
+```
+
+Expected:
+
+* HTTP 200
+* Page renders without authentication
+* Contains a clear headline explaining the portal purpose
+* Mobile viewport meta tag is present
+
+---
+
+### 55. Public Tryouts Browse (Web UI)
+
+```bash
+curl -i http://bc.localhost:8000/tryouts/
+```
+
+Expected:
+
+* HTTP 200
+* Tryouts rendered as cards or list items
+* Dates, teams, and locations visible
+* Layout stacks correctly on mobile widths
+
+---
+
+### 56. Tryout Detail (Region Isolation)
+
+```bash
+curl -i http://bc.localhost:8000/tryouts/<id>/
+```
+
+Expected:
+
+* HTTP 200 for tryouts in BC region
+* Correct tryout details displayed
+
+Cross-region check:
+
+```bash
+curl -i -H "Host: on.localhost:8000" http://localhost:8000/tryouts/<id>/
+```
+
+Expected:
+
+* HTTP 404 or redirect
+* No BC tryout data leaked across regions
+
+---
+
+### 57. Authentication Pages
+
+```bash
+curl -i http://bc.localhost:8000/login/
+```
+
+Expected:
+
+* HTTP 200
+* Login form renders correctly
+* Mobile-friendly input sizing and spacing
+
+Logout:
+
+```bash
+curl -i http://bc.localhost:8000/logout/
+```
+
+Expected:
+
+* Redirects to landing page or login
+
+---
+
+### 58. Post-Login Redirect
+
+After logging in via the Web UI:
+
+Expected:
+
+* User is redirected to `/dashboard/`
+* `/dashboard/` immediately redirects based on role:
+
+  * PLAYER → `/player/`
+  * COACH → `/coach/`
+  * ADMIN → `/admin/`
+
+---
+
+### 59. Player Dashboard (Authenticated)
+
+Using a PLAYER account:
+
+```bash
+curl -i http://bc.localhost:8000/player/
+```
+
+Expected:
+
+* HTTP 200
+* Summary cards visible (profile, availability, contact requests)
+* No other players’ data visible
+* Links correctly call existing API endpoints
+
+Unauthenticated access:
+
+```bash
+curl -i http://bc.localhost:8000/player/
+```
+
+Expected:
+
+* HTTP 302 redirect to login
+
+---
+
+### 60. Coach Dashboard (Role-Gated)
+
+Using an approved COACH account:
+
+```bash
+curl -i http://bc.localhost:8000/coach/
+```
+
+Expected:
+
+* HTTP 200
+* Coach-specific content rendered
+* Only permitted teams / open players visible
+
+Non-coach access:
+
+```bash
+curl -i http://bc.localhost:8000/coach/
+```
+
+Expected:
+
+* HTTP 403 or redirect
+* No coach data leaked
+
+---
+
+### 61. UI Permission Fail-Safe
+
+Manually force an unauthorized state (e.g. player accessing coach page).
+
+Expected:
+
+* Friendly error or redirect
+* No stack trace
+* No sensitive data rendered
+
+---
+
+### 62. Mobile Responsiveness (Manual)
+
+Using browser dev tools or a phone:
+
+* Navbar collapses correctly
+* Cards stack vertically
+* Tap targets are usable
+* No horizontal scrolling
+
+---
+
+### Exit Gate — Prompt #13
+
+You may proceed only if:
+
+* All Prompt #1–#12 checks remain green
+* Web UI is usable on mobile and desktop
+* Role-based routing behaves correctly
+* No permission or region isolation regressions exist
+* All changes are committed
+
+---
+
+**After Prompt #13, the MVP is considered end-user usable via the Web UI.**
