@@ -58,6 +58,7 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 - Users can register and log in.
 - Accounts are role-based.
 - Coaches require admin approval.
+- Coach signup requires email verification; domain-matched emails can be auto-approved.
 
 ### 5.2 Tryout Listings
 - Teams can post tryout dates, locations, and registration links.
@@ -150,4 +151,3 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 
 ## 10. References
 - See **ARCHITECTURE.md** for technical design and subdomain-based regional architecture.
-

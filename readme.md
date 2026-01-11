@@ -47,6 +47,7 @@ Social features may be added later with strict privacy controls.
 - Post team roster needs
 - View Open players (if permitted)
 - Send contact requests
+- Coach signup with email verification; auto-approval when email domain matches association
 
 ### Association / League Admin
 - Approve coach accounts
@@ -58,6 +59,7 @@ Social features may be added later with strict privacy controls.
 
 ## 🧩 Core Features
 - Role-based authentication and access control
+- Coach signup with email verification + domain-based auto-approval
 - Tryout listings with filtering
 - Player profiles (private by default)
 - Optional achievement and highlight showcase

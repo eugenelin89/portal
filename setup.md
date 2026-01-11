@@ -127,6 +127,9 @@ python manage.py runserver
 Then open:
 - **BC region:** http://bc.localhost:8000
 - **Admin:** http://bc.localhost:8000/admin
+- **Coach signup:** http://bc.localhost:8000/signup/coach/
+
+Email verification links are printed to the console in development.
 
 ---
 
