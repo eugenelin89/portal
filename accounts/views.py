@@ -1,13 +1,19 @@
 from django import forms
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.core.mail import send_mail
+from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Q
+from django.urls import reverse
 
 from accounts.models import AccountProfile
 from accounts.web_helpers import get_region_or_404, require_approved_coach, require_player
+from accounts.forms import CoachSignupForm
 from availability.forms import PlayerAvailabilityForm
 from availability.models import PlayerAvailability
 from availability.views import AUDIT_COMMITTED_CLEARED, AUDIT_COMMITTED_SET
@@ -28,6 +34,129 @@ def dashboard_router(request):
     if role and role.role == AccountProfile.Roles.COACH:
         return redirect("coach_dashboard")
     return redirect("player_dashboard")
+
+
+def _email_domain(email: str) -> str:
+    if "@" not in email:
+        return ""
+    return email.split("@")[-1].strip().lower()
+
+
+def _normalize_domain(domain: str) -> str:
+    return domain.strip().lower().lstrip("@")
+
+
+def _build_verification_token(user) -> str:
+    signer = TimestampSigner(salt="coach-signup")
+    return signer.sign(f"{user.pk}:{user.is_active}")
+
+
+def _verify_token(token: str, *, max_age_seconds: int):
+    signer = TimestampSigner(salt="coach-signup")
+    value = signer.unsign(token, max_age=max_age_seconds)
+    user_id_str, active_flag = value.split(":", 1)
+    return int(user_id_str), active_flag == "True"
+
+
+def coach_signup(request):
+    region = get_region_or_404(request)
+    if request.method == "POST":
+        form = CoachSignupForm(request.POST, region=region)
+        if form.is_valid():
+            email = form.cleaned_data["email"]
+            association = form.cleaned_data["association"]
+            domain_match = _email_domain(email) == _normalize_domain(association.official_domain)
+
+            user_model = get_user_model()
+            if user_model.objects.filter(username__iexact=email).exists():
+                form.add_error("email", "An account with this email already exists.")
+            else:
+                user = user_model.objects.create_user(
+                    username=email,
+                    email=email,
+                    first_name=form.cleaned_data["first_name"],
+                    last_name=form.cleaned_data["last_name"],
+                    password=form.cleaned_data["password"],
+                    is_active=False,
+                )
+                profile = user.profile
+                profile.role = AccountProfile.Roles.COACH
+                profile.is_coach_approved = domain_match
+                profile.phone_number = form.cleaned_data["phone_number"]
+                profile.save()
+
+                token = _build_verification_token(user)
+                verify_url = request.build_absolute_uri(
+                    reverse("coach_verify", args=[token])
+                )
+                send_mail(
+                    "Verify your coach account",
+                    (
+                        "Thanks for signing up. Please verify your email to activate your account:\n\n"
+                        f"{verify_url}\n\n"
+                        "If you did not request this account, you can ignore this email."
+                    ),
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                )
+                messages.success(
+                    request,
+                    "Check your email for a verification link to activate your account.",
+                )
+                return redirect("login")
+    else:
+        form = CoachSignupForm(region=region)
+
+    context = {
+        "form": form,
+        "page_title": "Coach Signup",
+        "page_subtitle": "Create your coach account and verify your email.",
+    }
+    return render(request, "accounts/coach_signup.html", context)
+
+
+def coach_verify(request, token):
+    max_age_seconds = 60 * 60 * 24 * 3
+    try:
+        user_id, was_active = _verify_token(token, max_age_seconds=max_age_seconds)
+    except SignatureExpired:
+        return render(
+            request,
+            "accounts/verify_complete.html",
+            {"success": False, "message": "Verification link expired."},
+            status=400,
+        )
+    except BadSignature:
+        return render(
+            request,
+            "accounts/verify_complete.html",
+            {"success": False, "message": "Invalid verification link."},
+            status=400,
+        )
+
+    user_model = get_user_model()
+    user = get_object_or_404(user_model, id=user_id)
+    if user.is_active:
+        return render(
+            request,
+            "accounts/verify_complete.html",
+            {"success": True, "message": "Your account is already verified."},
+        )
+    if was_active:
+        return render(
+            request,
+            "accounts/verify_complete.html",
+            {"success": False, "message": "Verification link has already been used."},
+            status=400,
+        )
+
+    user.is_active = True
+    user.save(update_fields=["is_active"])
+    return render(
+        request,
+        "accounts/verify_complete.html",
+        {"success": True, "message": "Your email has been verified. You can now sign in."},
+    )
 
 
 @require_player

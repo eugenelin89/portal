@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.core import mail
+from django.test import TestCase, override_settings
 from rest_framework.test import APIRequestFactory
 
 from accounts.models import AccountProfile
@@ -105,3 +106,81 @@ class WebRoleGuardTests(TestCase):
         self.client.login(username="coach1", password="testpass")
         response = self.client.get(f"/coach/open-players/{self.player.id}/", HTTP_HOST="bc.localhost:8000")
         self.assertEqual(response.status_code, 404)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class CoachSignupTests(TestCase):
+    def setUp(self):
+        self.region = Region.objects.get(code="bc")
+        self.assoc_match = Association.objects.create(
+            region=self.region,
+            name="BC Assoc",
+            official_domain="vancouverminor.com",
+        )
+        self.assoc_nomatch = Association.objects.create(
+            region=self.region,
+            name="Other Assoc",
+            official_domain="other.org",
+        )
+
+    def _extract_token(self, email_body):
+        marker = "/signup/coach/verify/"
+        start = email_body.find(marker)
+        if start == -1:
+            return None
+        token = email_body[start + len(marker):].split()[0].strip()
+        return token.strip("/")
+
+    def test_domain_match_auto_approves_after_verification(self):
+        response = self.client.post(
+            "/signup/coach/",
+            {
+                "first_name": "Pat",
+                "last_name": "Coach",
+                "association": self.assoc_match.id,
+                "email": "pat@vancouverminor.com",
+                "phone_number": "555-0101",
+                "password": "testpass123",
+                "confirm_password": "testpass123",
+            },
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(email="pat@vancouverminor.com")
+        self.assertFalse(user.is_active)
+        self.assertEqual(user.profile.role, AccountProfile.Roles.COACH)
+        self.assertTrue(user.profile.is_coach_approved)
+
+        self.assertEqual(len(mail.outbox), 1)
+        token = self._extract_token(mail.outbox[0].body)
+        self.assertIsNotNone(token)
+
+        self.assertFalse(self.client.login(username=user.username, password="testpass123"))
+        verify_response = self.client.get(
+            f"/signup/coach/verify/{token}/",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(verify_response.status_code, 200)
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertTrue(self.client.login(username=user.username, password="testpass123"))
+
+    def test_domain_mismatch_requires_admin_approval(self):
+        response = self.client.post(
+            "/signup/coach/",
+            {
+                "first_name": "Alex",
+                "last_name": "Coach",
+                "association": self.assoc_nomatch.id,
+                "email": "alex@gmail.com",
+                "phone_number": "555-0202",
+                "password": "testpass123",
+                "confirm_password": "testpass123",
+            },
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(email="alex@gmail.com")
+        self.assertFalse(user.is_active)
+        self.assertEqual(user.profile.role, AccountProfile.Roles.COACH)
+        self.assertFalse(user.profile.is_coach_approved)

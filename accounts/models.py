@@ -18,6 +18,7 @@ class AccountProfile(models.Model):
         choices=Roles.choices,
         default=Roles.PLAYER,
     )
+    phone_number = models.CharField(max_length=30, blank=True)
     is_coach_approved = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

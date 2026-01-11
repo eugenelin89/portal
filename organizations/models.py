@@ -9,6 +9,8 @@ class Association(models.Model):
     region = models.ForeignKey(Region, on_delete=models.PROTECT, related_name="associations")
     name = models.CharField(max_length=150)
     short_name = models.CharField(max_length=50, blank=True)
+    official_domain = models.CharField(max_length=150, blank=True)
+    website_url = models.URLField(blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

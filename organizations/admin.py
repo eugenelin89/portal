@@ -5,9 +5,9 @@ from organizations.models import Association, Team, TeamCoach
 
 @admin.register(Association)
 class AssociationAdmin(admin.ModelAdmin):
-    list_display = ("name", "region", "is_active")
+    list_display = ("name", "region", "official_domain", "is_active")
     list_filter = ("region", "is_active")
-    search_fields = ("name", "short_name")
+    search_fields = ("name", "short_name", "official_domain")
 
 
 @admin.register(Team)

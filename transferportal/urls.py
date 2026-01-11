@@ -38,6 +38,8 @@ urlpatterns = [
     ),
     path("coach/requests/", account_views.coach_requests, name="coach_requests"),
     path("coach/requests/new/", account_views.coach_request_new, name="coach_request_new"),
+    path("signup/coach/", account_views.coach_signup, name="coach_signup"),
+    path("signup/coach/verify/<str:token>/", account_views.coach_verify, name="coach_verify"),
     path(
         "accounts/login/",
         auth_views.LoginView.as_view(template_name="registration/login.html"),
