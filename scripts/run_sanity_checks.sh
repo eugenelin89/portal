@@ -868,3 +868,135 @@ PY
 
 echo
 echo "Web UI sanity checks passed (Prompt #13)."
+
+############################################
+
+# Prompt #14 — Coach Signup, Auto-Approval, Email Verification
+
+############################################
+
+print_step 53 "Coach Signup (Domain Match)" "Prompt #14"
+check_command_success "coach auto-approval with domain match" \
+  python - <<'PY'
+import os
+import uuid
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.contrib.auth import get_user_model
+from django.core import mail
+from django.test import Client, override_settings
+
+from organizations.models import Association
+from regions.models import Region
+
+User = get_user_model()
+
+region = Region.objects.get(code="bc")
+association = Association.objects.filter(region=region).first()
+association.official_domain = "vancouverminor.com"
+association.save(update_fields=["official_domain"])
+
+email = f"auto_{uuid.uuid4().hex[:8]}@vancouverminor.com"
+password = "coachpass123"
+
+client = Client(HTTP_HOST="bc.localhost")
+with override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
+    response = client.post(
+        "/signup/coach/",
+        {
+            "first_name": "Pat",
+            "last_name": "Coach",
+            "association": association.id,
+            "email": email,
+            "phone_number": "555-0101",
+            "password": password,
+            "confirm_password": password,
+        },
+    )
+    assert response.status_code == 302, response.status_code
+    user = User.objects.get(email=email)
+    assert user.is_active is False
+    assert user.profile.is_coach_approved is True
+    assert client.login(username=user.username, password=password) is False
+
+    assert len(mail.outbox) == 1
+    body = mail.outbox[0].body
+    marker = "/signup/coach/verify/"
+    start = body.find(marker)
+    assert start != -1
+    token = body[start + len(marker):].split()[0].strip().strip("/")
+    verify_response = client.get(f"/signup/coach/verify/{token}/")
+    assert verify_response.status_code == 200
+    user.refresh_from_db()
+    assert user.is_active is True
+    assert client.login(username=user.username, password=password) is True
+print("ok")
+PY
+
+print_step 54 "Coach Signup (Domain Mismatch)" "Prompt #14"
+check_command_success "coach requires admin approval on mismatch" \
+  python - <<'PY'
+import os
+import uuid
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.contrib.auth import get_user_model
+from django.core import mail
+from django.test import Client, override_settings
+
+from organizations.models import Association
+from regions.models import Region
+
+User = get_user_model()
+
+region = Region.objects.get(code="bc")
+association = Association.objects.create(
+    region=region,
+    name=f"Other Assoc {uuid.uuid4().hex[:6]}",
+    official_domain="other.org",
+)
+
+email = f"auto_{uuid.uuid4().hex[:8]}@gmail.com"
+password = "coachpass123"
+
+client = Client(HTTP_HOST="bc.localhost")
+with override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
+    response = client.post(
+        "/signup/coach/",
+        {
+            "first_name": "Alex",
+            "last_name": "Coach",
+            "association": association.id,
+            "email": email,
+            "phone_number": "555-0202",
+            "password": password,
+            "confirm_password": password,
+        },
+    )
+    assert response.status_code == 302, response.status_code
+    user = User.objects.get(email=email)
+    assert user.is_active is False
+    assert user.profile.is_coach_approved is False
+
+    assert len(mail.outbox) == 1
+    body = mail.outbox[0].body
+    marker = "/signup/coach/verify/"
+    start = body.find(marker)
+    assert start != -1
+    token = body[start + len(marker):].split()[0].strip().strip("/")
+    verify_response = client.get(f"/signup/coach/verify/{token}/")
+    assert verify_response.status_code == 200
+    user.refresh_from_db()
+    assert user.is_active is True
+    assert client.login(username=user.username, password=password) is True
+
+    response = client.get("/coach/")
+    assert response.status_code in (302, 403), response.status_code
+print("ok")
+PY

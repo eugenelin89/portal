@@ -1610,3 +1610,83 @@ The portal is **actually usable** via web UI:
 * Coaches can discover and contact players
 * Privacy, region, and team isolation remain strict
 * UI looks professional on desktop and mobile
+
+---
+
+## Prompt 014 — Coach Signup, Auto-Approval, and Email Verification
+
+**Date:** 2026-01-09
+**Tasks:** New feature — Coach onboarding (Web UI + API support)
+
+### Prompt
+
+Implement **Coach Signup & Onboarding** with email verification and conditional auto-approval based on association email domain.
+
+#### Goals
+
+* Allow coaches to self-signup via Web UI
+* Expedite approval if the coach’s email domain matches their association’s official domain
+* Require email verification before account activation
+* Preserve admin approval flow for non-matching domains
+* Keep region and permission boundaries intact
+
+#### Requirements
+
+**Association Enhancements (Admin-only):**
+
+* Extend `Association` with:
+
+  * `official_domain` (e.g. `vancouverminor.com`)
+  * Optional `website_url`
+* Admin manages association name + domain in Django admin
+
+**Coach Signup Web UI:**
+
+* New route: `/signup/coach/`
+* Mobile-first, professional UI
+* Form fields:
+
+  * First name
+  * Last name
+  * Association (dropdown, region-scoped)
+  * Email
+
+    * Inline explanation:
+
+      > *If your email domain matches your association’s official domain, your account will be automatically approved.*
+  * Phone number
+  * Password
+  * Confirm password
+
+**Signup Behavior:**
+
+* Create inactive user (`is_active = False`) until email verified
+* Create `AccountProfile` with role = COACH
+* Compare email domain with selected association’s `official_domain`
+
+  * Match → `is_coach_approved = True`
+  * No match → `is_coach_approved = False` (admin approval required)
+
+**Email Verification:**
+
+* Send verification email with signed, single-use token
+* Verification endpoint activates user account
+* User cannot log in until verified
+
+**Security Constraints:**
+
+* No role escalation
+* Region isolation preserved
+* Signup does not bypass email verification
+
+#### Deliverables
+
+* Coach signup view + template
+* Association dropdown (region-aware)
+* Email verification flow
+* Auto-approval logic
+* Tests for:
+
+  * Domain match auto-approval
+  * Non-match requires admin approval
+  * Login blocked before email verification

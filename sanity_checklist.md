@@ -1635,3 +1635,100 @@ You may proceed only if:
 ---
 
 **After Prompt #13, the MVP is considered end-user usable via the Web UI.**
+
+---
+
+## Sanity Check — After Prompt #14 (Coach Signup, Auto-Approval, Email Verification)
+
+These checks verify the coach signup flow, email verification, and domain-based auto-approval rules.
+
+---
+
+### 73. Migrate & Run Tests
+
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+
+* New migrations apply cleanly
+* Tests for coach signup and verification pass
+
+---
+
+### 74. Association Domains (Admin)
+
+In Django admin:
+
+* Edit an Association and set:
+  * `official_domain` (e.g. `vancouverminor.com`)
+  * Optional `website_url`
+
+Expected:
+
+* Fields appear in admin and save correctly
+
+---
+
+### 75. Coach Signup Page
+
+Visit:
+
+```
+http://bc.localhost:8000/signup/coach/
+```
+
+Expected:
+
+* Form renders with first/last name, association, email, phone, password, confirm password
+* Association dropdown is region‑scoped
+* Inline explanation about domain-based auto-approval is visible
+
+---
+
+### 76. Email Verification Required
+
+Submit the form with a valid association and email.
+
+Expected:
+
+* User is created with `is_active = False`
+* Verification email is sent
+* User cannot log in before clicking the verification link
+
+---
+
+### 77. Domain Match Auto-Approval
+
+Use an email that matches the association’s `official_domain`.
+
+Expected:
+
+* `is_coach_approved = True`
+* After verification, the coach can log in and access coach pages
+
+---
+
+### 78. Domain Mismatch Requires Admin Approval
+
+Use a non-matching email domain.
+
+Expected:
+
+* `is_coach_approved = False`
+* After verification, coach can log in but cannot access coach pages until approved
+
+---
+
+### Exit Gate — Prompt #14
+
+You may proceed only if:
+
+* All Prompt #1–#13 checks remain green
+* Coach signup works end‑to‑end
+* Email verification is required before login
+* Auto-approval only happens on domain match
+* Region isolation remains intact
+* Changes are committed
