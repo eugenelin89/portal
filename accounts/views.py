@@ -1,19 +1,19 @@
 from django import forms
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib import messages
+from django.contrib.auth import get_user_model, login
+from django.contrib.auth.decorators import login_required
 from django.core.mail import send_mail
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
-from django.db.models import Q
 from django.urls import reverse
+from django.utils import timezone
 
+from accounts.forms import CoachSignupForm, PlayerContactForm, PlayerSignupForm
 from accounts.models import AccountProfile
 from accounts.web_helpers import get_region_or_404, require_approved_coach, require_player
-from accounts.forms import CoachSignupForm
 from availability.forms import PlayerAvailabilityForm
 from availability.models import PlayerAvailability
 from availability.views import AUDIT_COMMITTED_CLEARED, AUDIT_COMMITTED_SET
@@ -56,6 +56,28 @@ def _verify_token(token: str, *, max_age_seconds: int):
     value = signer.unsign(token, max_age=max_age_seconds)
     user_id_str, active_flag = value.split(":", 1)
     return int(user_id_str), active_flag == "True"
+
+
+def _build_player_verification_token(user) -> str:
+    signer = TimestampSigner(salt="player-signup")
+    return signer.sign(f"{user.pk}:{user.is_active}")
+
+
+def _verify_player_token(token: str, *, max_age_seconds: int):
+    signer = TimestampSigner(salt="player-signup")
+    value = signer.unsign(token, max_age=max_age_seconds)
+    user_id_str, active_flag = value.split(":", 1)
+    return int(user_id_str), active_flag == "True"
+
+
+@require_player
+def player_dashboard(request):
+    return render(request, "dashboards/player.html")
+
+
+@require_approved_coach
+def coach_dashboard(request):
+    return render(request, "dashboards/coach.html")
 
 
 def coach_signup(request):
@@ -159,30 +181,151 @@ def coach_verify(request, token):
     )
 
 
-@require_player
-def player_dashboard(request):
-    return render(request, "dashboards/player.html")
+def player_signup(request):
+    region = get_region_or_404(request)
+    if request.method == "POST":
+        form = PlayerSignupForm(request.POST, region=region)
+        if form.is_valid():
+            email = form.cleaned_data["email"]
+            user_model = get_user_model()
+            if user_model.objects.filter(username__iexact=email).exists():
+                form.add_error("email", "An account with this email already exists.")
+            else:
+                user = user_model.objects.create_user(
+                    username=email,
+                    email=email,
+                    first_name=form.cleaned_data["first_name"],
+                    last_name=form.cleaned_data["last_name"],
+                    password=form.cleaned_data["password"],
+                    is_active=False,
+                )
+                profile = user.profile
+                profile.role = AccountProfile.Roles.PLAYER
+                profile.phone_number = form.cleaned_data["phone_number"]
+                profile.save()
+
+                player_profile, _ = PlayerProfile.objects.get_or_create(user=user)
+                player_profile.display_name = f"{user.first_name} {user.last_name}".strip()
+                player_profile.birth_year = form.cleaned_data["birth_year"]
+                player_profile.current_association = form.cleaned_data.get("current_association")
+                player_profile.profile_visibility = form.cleaned_data["profile_visibility"]
+                player_profile.pbr_url = form.cleaned_data.get("pbr_url", "")
+                player_profile.pg_url = form.cleaned_data.get("pg_url", "")
+                player_profile.youtube_url = form.cleaned_data.get("youtube_url", "")
+                player_profile.instagram_handle = form.cleaned_data.get("instagram_handle", "")
+                player_profile.twitter_handle = form.cleaned_data.get("twitter_handle", "")
+                player_profile.bio = form.cleaned_data.get("bio", "")
+                player_profile.save()
+
+                visibility = form.cleaned_data["profile_visibility"]
+                if visibility == PlayerProfile.Visibility.SPECIFIC:
+                    player_profile.visible_associations.set(form.cleaned_data.get("visible_associations"))
+                else:
+                    player_profile.visible_associations.clear()
+
+                if form.cleaned_data.get("available_for_transfer"):
+                    availability, _ = PlayerAvailability.objects.get_or_create(
+                        player=user,
+                        defaults={"region": region},
+                    )
+                    availability.region = region
+                    availability.is_open = True
+                    availability.is_committed = False
+                    availability.save(update_fields=["region", "is_open", "is_committed"])
+
+                token = _build_player_verification_token(user)
+                verify_url = request.build_absolute_uri(
+                    reverse("player_verify", args=[token])
+                )
+                send_mail(
+                    "Verify your player account",
+                    (
+                        "Thanks for signing up. Please verify your email to activate your account:\n\n"
+                        f"{verify_url}\n\n"
+                        "If you did not request this account, you can ignore this email."
+                    ),
+                    settings.DEFAULT_FROM_EMAIL,
+                    [email],
+                )
+                messages.success(
+                    request,
+                    "Check your email for a verification link to activate your account.",
+                )
+                return redirect("login")
+    else:
+        form = PlayerSignupForm(region=region)
+
+    context = {
+        "form": form,
+        "page_title": "Player Signup",
+        "page_subtitle": "Create your account and verify your email to get started.",
+    }
+    return render(request, "accounts/player_signup.html", context)
 
 
-@require_approved_coach
-def coach_dashboard(request):
-    return render(request, "dashboards/coach.html")
+def player_verify(request, token):
+    max_age_seconds = 60 * 60 * 24 * 3
+    try:
+        user_id, was_active = _verify_player_token(token, max_age_seconds=max_age_seconds)
+    except SignatureExpired:
+        return render(
+            request,
+            "accounts/verify_complete.html",
+            {"success": False, "message": "Verification link expired."},
+            status=400,
+        )
+    except BadSignature:
+        return render(
+            request,
+            "accounts/verify_complete.html",
+            {"success": False, "message": "Invalid verification link."},
+            status=400,
+        )
+
+    user_model = get_user_model()
+    user = get_object_or_404(user_model, id=user_id)
+    if user.is_active:
+        return render(
+            request,
+            "accounts/verify_complete.html",
+            {"success": True, "message": "Your account is already verified."},
+        )
+    if was_active:
+        return render(
+            request,
+            "accounts/verify_complete.html",
+            {"success": False, "message": "Verification link has already been used."},
+            status=400,
+        )
+
+    user.is_active = True
+    user.save(update_fields=["is_active"])
+    login(request, user, backend=settings.AUTHENTICATION_BACKENDS[0])
+    return redirect("dashboard")
 
 
 @require_player
 def player_profile(request):
+    region = get_region_or_404(request)
     profile, _ = PlayerProfile.objects.get_or_create(user=request.user)
     if request.method == "POST":
-        form = PlayerProfileForm(request.POST, instance=profile)
-        if form.is_valid():
-            form.save()
+        form = PlayerProfileForm(request.POST, instance=profile, region=region)
+        contact_form = PlayerContactForm(request.POST)
+        if form.is_valid() and contact_form.is_valid():
+            profile = form.save()
+            if profile.profile_visibility != PlayerProfile.Visibility.SPECIFIC:
+                profile.visible_associations.clear()
+            request.user.profile.phone_number = contact_form.cleaned_data.get("phone_number", "")
+            request.user.profile.save(update_fields=["phone_number"])
             messages.success(request, "Profile updated.")
             return redirect("player_profile")
     else:
-        form = PlayerProfileForm(instance=profile)
+        form = PlayerProfileForm(instance=profile, region=region)
+        contact_form = PlayerContactForm(initial={"phone_number": request.user.profile.phone_number})
 
     context = {
         "form": form,
+        "contact_form": contact_form,
         "page_title": "Player Profile",
         "page_subtitle": "Keep your player details up to date.",
     }

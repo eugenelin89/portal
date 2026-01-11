@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Player Profile | BC Baseball Transfer Portal{% endblock %}
+{% block title %}Player Signup | BC Baseball Transfer Portal{% endblock %}
 
 {% block content %}
   <div class="row justify-content-center">
@@ -10,10 +10,16 @@
           {% include "partials/_form_errors.html" %}
           <form method="post">
             {% csrf_token %}
-            <h2 class="h6 text-uppercase text-muted mb-3">Core profile</h2>
-            <div class="mb-3">
-              <label class="form-label" for="id_display_name">Display name</label>
-              {{ form.display_name }}
+            <h2 class="h5 mb-3">Account details</h2>
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label class="form-label" for="id_first_name">First name</label>
+                {{ form.first_name }}
+              </div>
+              <div class="col-12 col-md-6 mb-3">
+                <label class="form-label" for="id_last_name">Last name</label>
+                {{ form.last_name }}
+              </div>
             </div>
             <div class="row">
               <div class="col-12 col-md-6 mb-3">
@@ -21,42 +27,52 @@
                 {{ form.birth_year }}
               </div>
               <div class="col-12 col-md-6 mb-3">
+                <label class="form-label" for="id_email">Email</label>
+                {{ form.email }}
+                <div class="form-text">We use this email for verification and login.</div>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-12 col-md-6 mb-3">
+                <label class="form-label" for="id_phone_number">Contact phone number</label>
+                {{ form.phone_number }}
+              </div>
+              <div class="col-12 col-md-6 mb-3">
                 <label class="form-label" for="id_current_association">Current association</label>
                 {{ form.current_association }}
               </div>
             </div>
-            <div class="mb-3">
-              <label class="form-label" for="id_positions">Positions</label>
-              {{ form.positions }}
-              <div class="form-text">Select all positions you currently play.</div>
-            </div>
             <div class="row">
               <div class="col-12 col-md-6 mb-3">
-                <label class="form-label" for="id_bats">Bats</label>
-                {{ form.bats }}
+                <label class="form-label" for="id_password">Password</label>
+                {{ form.password }}
               </div>
               <div class="col-12 col-md-6 mb-3">
-                <label class="form-label" for="id_throws">Throws</label>
-                {{ form.throws }}
+                <label class="form-label" for="id_confirm_password">Confirm password</label>
+                {{ form.confirm_password }}
               </div>
             </div>
-            <div class="mb-3">
-              <label class="form-label" for="id_phone_number">Contact phone number</label>
-              {{ contact_form.phone_number }}
-            </div>
 
-            <h2 class="h6 text-uppercase text-muted mt-4 mb-3">Visibility</h2>
+            <h2 class="h5 mt-4 mb-3">Availability and visibility</h2>
+            <div class="form-check form-switch mb-3">
+              {{ form.available_for_transfer }}
+              <label class="form-check-label" for="id_available_for_transfer">Available for transfer</label>
+            </div>
             <div class="mb-3">
               <label class="form-label" for="id_profile_visibility">Who can view your profile?</label>
               {{ form.profile_visibility }}
-              <div class="form-text">You can change this anytime.</div>
+              <div class="form-text">You can change this later from your dashboard.</div>
             </div>
             <div class="mb-3">
               <label class="form-label" for="id_visible_associations">Visible associations (if specific)</label>
               {{ form.visible_associations }}
+              <div class="form-text">Only selected associations will see your profile.</div>
+            </div>
+            <div class="alert alert-light border mb-3">
+              Privacy defaults to limited visibility. You control who can see your profile and can update this later.
             </div>
 
-            <h2 class="h6 text-uppercase text-muted mt-4 mb-3">Links and bio</h2>
+            <h2 class="h5 mt-4 mb-3">Optional links</h2>
             <div class="row">
               <div class="col-12 col-md-6 mb-3">
                 <label class="form-label" for="id_pbr_url">PBR profile URL</label>
@@ -87,9 +103,10 @@
               <label class="form-label" for="id_bio">Bio</label>
               {{ form.bio }}
             </div>
+
             <div class="d-flex flex-column flex-sm-row gap-2">
-              <button class="btn btn-primary" type="submit">Save profile</button>
-              <a class="btn btn-outline-secondary" href="{% url 'player_dashboard' %}">Back to dashboard</a>
+              <button class="btn btn-primary" type="submit">Create player account</button>
+              <a class="btn btn-outline-secondary" href="{% url 'login' %}">Back to sign in</a>
             </div>
           </form>
         </div>

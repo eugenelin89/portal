@@ -1690,3 +1690,184 @@ Implement **Coach Signup & Onboarding** with email verification and conditional 
   * Domain match auto-approval
   * Non-match requires admin approval
   * Login blocked before email verification
+
+---
+
+## Prompt 015 — Player Signup + Email Verification (Player‑Only)
+
+**Status correction**: Coach signup/onboarding is handled in **Prompt #14**.
+This prompt is **player-only** and should NOT re‑implement coach signup logic.
+
+---
+
+### Goal
+
+Complete the MVP by allowing **players (or parents)** to:
+
+* Sign up for an account
+* Verify their email address
+* Complete a private PlayerProfile during onboarding
+* Edit all profile fields later **except email**
+
+This enables real users to onboard without admin intervention while preserving privacy and security guarantees.
+
+---
+
+## Scope & Constraints
+
+* **Player signup ONLY** (no coach signup in this prompt)
+* Email verification is required before account activation
+* Do NOT weaken existing permission, region, or privacy rules
+* Reuse existing models where possible (`User`, `AccountProfile`, `PlayerProfile`)
+* Web UI + backend logic allowed
+* Mobile‑friendly, professional UI (Bootstrap, existing design system)
+
+---
+
+## Player Signup Requirements
+
+### Signup Form Fields
+
+Required at signup:
+
+* First Name
+* Last Name
+* Birth Year
+* Email (unique, immutable after verification)
+* Password
+* Confirm Password
+* Contact Phone Number
+* Current Association (dropdown, region‑scoped)
+
+Optional / additional profile fields (can be filled now or later):
+
+* Available for transfer? (boolean → initializes availability)
+* Which associations can view your profile?
+
+  * All
+  * None
+  * Specific associations (multi‑select, region‑scoped)
+* PBR Profile URL
+* PG Profile URL
+* YouTube Channel URL
+* Instagram handle
+* X (Twitter) handle
+* Bio
+
+> All fields must be editable later **except email** (for MVP).
+
+---
+
+## Signup Flow
+
+1. User visits `/signup/player/`
+2. Completes signup form
+3. System creates:
+
+   * `User` (inactive)
+   * `AccountProfile` with role = PLAYER
+   * (Optionally) stub `PlayerProfile`
+4. System sends **email verification link**
+5. User clicks verification link
+6. Account is activated
+7. User is redirected to `/dashboard/` → `/player/`
+
+---
+
+## Email Verification
+
+* Generate a signed, expiring token (e.g. Django signing or built‑in token generator)
+* Verification URL example:
+  `/verify-email/<uid>/<token>/`
+* On success:
+
+  * `user.is_active = True`
+  * token invalidated
+
+---
+
+## Availability Initialization
+
+If player selected **“Available for transfer”** during signup:
+
+* Create or update `PlayerAvailability`:
+
+  * `is_open = true`
+  * region = current region
+  * committed = false
+
+Otherwise:
+
+* Availability defaults to closed
+
+---
+
+## Associations & Visibility
+
+* Association dropdown is populated from **existing Association records**
+* Region‑scoped only
+* Visibility controls must respect existing allow‑list logic
+
+---
+
+## Web UI Requirements
+
+* Mobile‑first layout
+* Clear explanation of:
+
+  * Privacy defaults
+  * Who can see the profile
+  * Ability to change settings later
+* Friendly error handling
+* No raw Django error pages exposed
+
+---
+
+## Permissions & Security
+
+* Only verified users can log in
+* Players cannot view other players’ profiles
+* Signup cannot be used to escalate roles
+* Email uniqueness enforced
+* Tokens expire
+
+---
+
+## Required Updates
+
+Codex must:
+
+1. Implement player signup + verification
+2. Update:
+
+   * `PROMPTS.md` (append Prompt #15)
+   * `SANITY_CHECKLIST.md` (new verification section)
+   * `scripts/run_sanity_checks.sh` (automated checks)
+3. Add tests:
+
+   * Signup
+   * Email verification
+   * Login blocked before verification
+   * Profile creation
+
+---
+
+## Acceptance Criteria
+
+* Player can self‑register
+* Email verification is required
+* Profile data persists
+* Availability is initialized correctly
+* All tests pass
+* MVP onboarding is complete
+
+---
+
+## Expected Outcome
+
+After Prompt #15:
+
+✅ Coaches onboard via Prompt #14
+✅ Players onboard via Prompt #15
+✅ No admin intervention required for basic usage
+✅ MVP is production‑ready for pilot launch

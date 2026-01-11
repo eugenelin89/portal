@@ -1732,3 +1732,91 @@ You may proceed only if:
 * Auto-approval only happens on domain match
 * Region isolation remains intact
 * Changes are committed
+
+---
+
+## Sanity Check — After Prompt #15 (Player Signup + Email Verification)
+
+These checks verify player signup, email verification, and onboarding profile data.
+
+---
+
+### 79. Migrate & Run Tests
+
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+
+* New migrations apply cleanly
+* Player signup + verification tests pass
+
+---
+
+### 80. Player Signup Page
+
+Visit:
+
+```
+http://bc.localhost:8000/signup/player/
+```
+
+Expected:
+
+* Form renders required fields
+* Association dropdown is region‑scoped
+* Privacy explanation is visible
+
+---
+
+### 81. Email Verification Required
+
+Submit the signup form with a unique email.
+
+Expected:
+
+* User created with `is_active = False`
+* Verification email sent
+* User cannot log in before verification
+
+---
+
+### 82. Profile Creation and Persistence
+
+After verifying the email:
+
+Expected:
+
+* User is activated
+* PlayerProfile is created with birth year and visibility settings
+* Email is not editable in profile UI
+
+---
+
+### 83. Availability Initialization
+
+If “Available for transfer” was selected at signup:
+
+Expected:
+
+* PlayerAvailability exists
+* `is_open = true`, `is_committed = false`
+
+If not selected:
+
+* Availability remains closed or unset
+
+---
+
+### Exit Gate — Prompt #15
+
+You may proceed only if:
+
+* All Prompt #1–#14 checks remain green
+* Player signup works end‑to‑end
+* Email verification is required before login
+* Profile data persists correctly
+* Availability initialization behaves correctly
+* Changes are committed

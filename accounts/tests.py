@@ -7,6 +7,7 @@ from accounts.models import AccountProfile
 from accounts.permissions import IsAdminRole, IsApprovedCoach
 from availability.models import PlayerAvailability
 from organizations.models import Association, Team, TeamCoach
+from profiles.models import PlayerProfile
 from regions.models import Region
 
 
@@ -184,3 +185,64 @@ class CoachSignupTests(TestCase):
         self.assertFalse(user.is_active)
         self.assertEqual(user.profile.role, AccountProfile.Roles.COACH)
         self.assertFalse(user.profile.is_coach_approved)
+
+
+@override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+class PlayerSignupTests(TestCase):
+    def setUp(self):
+        self.region = Region.objects.get(code="bc")
+        self.assoc = Association.objects.create(region=self.region, name="BC Assoc")
+
+    def _extract_token(self, email_body):
+        marker = "/signup/player/verify/"
+        start = email_body.find(marker)
+        if start == -1:
+            return None
+        token = email_body[start + len(marker):].split()[0].strip()
+        return token.strip("/")
+
+    def test_player_signup_requires_verification(self):
+        response = self.client.post(
+            "/signup/player/",
+            {
+                "first_name": "Sam",
+                "last_name": "Player",
+                "birth_year": 2011,
+                "email": "sam@example.com",
+                "phone_number": "555-0303",
+                "current_association": self.assoc.id,
+                "available_for_transfer": "on",
+                "profile_visibility": "specific",
+                "visible_associations": [self.assoc.id],
+                "password": "testpass123",
+                "confirm_password": "testpass123",
+            },
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 302)
+        user = User.objects.get(email="sam@example.com")
+        self.assertFalse(user.is_active)
+        self.assertEqual(user.profile.role, AccountProfile.Roles.PLAYER)
+
+        profile = PlayerProfile.objects.get(user=user)
+        self.assertEqual(profile.birth_year, 2011)
+        self.assertEqual(profile.profile_visibility, PlayerProfile.Visibility.SPECIFIC)
+        self.assertTrue(profile.visible_associations.filter(id=self.assoc.id).exists())
+
+        availability = PlayerAvailability.objects.get(player=user)
+        self.assertTrue(availability.is_open)
+        self.assertFalse(availability.is_committed)
+
+        self.assertEqual(len(mail.outbox), 1)
+        token = self._extract_token(mail.outbox[0].body)
+        self.assertIsNotNone(token)
+
+        self.assertFalse(self.client.login(username=user.username, password="testpass123"))
+        verify_response = self.client.get(
+            f"/signup/player/verify/{token}/",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(verify_response.status_code, 302)
+        user.refresh_from_db()
+        self.assertTrue(user.is_active)
+        self.assertTrue(self.client.login(username=user.username, password="testpass123"))

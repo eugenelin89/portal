@@ -91,7 +91,10 @@ class Command(BaseCommand):
         profile.positions = ["OF"]
         profile.bats = PlayerProfile.Bats.RIGHT
         profile.throws = PlayerProfile.Throws.RIGHT
+        profile.current_association = association
+        profile.profile_visibility = PlayerProfile.Visibility.SPECIFIC
         profile.save()
+        profile.visible_associations.set([association])
 
         availability, _ = PlayerAvailability.objects.get_or_create(
             player=player_user,

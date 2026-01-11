@@ -1000,3 +1000,88 @@ with override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBack
     assert response.status_code in (302, 403), response.status_code
 print("ok")
 PY
+
+############################################
+
+# Prompt #15 — Player Signup + Email Verification
+
+############################################
+
+print_step 55 "Player Signup + Verification" "Prompt #15"
+check_command_success "player signup flow works" \
+  python - <<'PY'
+import os
+import uuid
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.contrib.auth import get_user_model
+from django.core import mail
+from django.test import Client, override_settings
+
+from availability.models import PlayerAvailability
+from organizations.models import Association
+from profiles.models import PlayerProfile
+from regions.models import Region
+
+User = get_user_model()
+
+region = Region.objects.get(code="bc")
+association = Association.objects.create(
+    region=region,
+    name=f"Signup Assoc {uuid.uuid4().hex[:6]}",
+)
+
+email = f"player_{uuid.uuid4().hex[:8]}@example.com"
+password = "playerpass123"
+
+client = Client(HTTP_HOST="bc.localhost")
+with override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend"):
+    response = client.post(
+        "/signup/player/",
+        {
+            "first_name": "Taylor",
+            "last_name": "Player",
+            "birth_year": 2012,
+            "email": email,
+            "phone_number": "555-0404",
+            "current_association": association.id,
+            "available_for_transfer": "on",
+            "profile_visibility": "specific",
+            "visible_associations": [association.id],
+            "password": password,
+            "confirm_password": password,
+        },
+    )
+    assert response.status_code == 302, response.status_code
+
+    user = User.objects.get(email=email)
+    assert user.is_active is False
+    assert client.login(username=user.username, password=password) is False
+
+    profile = PlayerProfile.objects.get(user=user)
+    assert profile.birth_year == 2012
+    assert profile.visible_associations.filter(id=association.id).exists()
+
+    availability = PlayerAvailability.objects.get(player=user)
+    assert availability.is_open is True
+
+    assert len(mail.outbox) == 1
+    body = mail.outbox[0].body
+    marker = "/signup/player/verify/"
+    start = body.find(marker)
+    assert start != -1
+    token = body[start + len(marker):].split()[0].strip().strip("/")
+
+    verify_response = client.get(f"/signup/player/verify/{token}/")
+    assert verify_response.status_code == 302
+    assert "/dashboard/" in verify_response.headers.get("Location", "")
+
+    user.refresh_from_db()
+    assert user.is_active is True
+    assert client.login(username=user.username, password=password) is True
+
+print("ok")
+PY
