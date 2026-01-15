@@ -41,6 +41,8 @@ This creates:
 - Player: `player1 / playerpass123`
 - BC region, association, teams, tryout, player profile, and open availability
 
+Note: demo users are active immediately; the signup flow below requires email verification.
+
 ### 2.3 Run the server
 
 ```bash
@@ -104,6 +106,18 @@ Click a tryout card to view details and registration.
 
 ## 5) Player Workflow
 
+### 5.0 Player signup (new users)
+
+Visit:
+```
+http://bc.localhost:8000/signup/player/
+```
+
+Expected:
+- Account is created inactive.
+- A verification email link is sent (printed to console in development).
+- You must verify before logging in.
+
 Log in as a player:
 ```
 username: player1
@@ -134,6 +148,8 @@ You can edit:
 - Birth year
 - Positions
 - Bats / Throws
+- Profile visibility and visible associations
+- Optional links and bio
 
 ### 5.3 Availability (Open status)
 
@@ -173,6 +189,19 @@ Approved requests are recorded and visible to the requesting coach.
 ---
 
 ## 6) Coach Workflow (Approved Coaches Only)
+
+### 6.0 Coach signup (new users)
+
+Visit:
+```
+http://bc.localhost:8000/signup/coach/
+```
+
+Expected:
+- Account is created inactive.
+- A verification email link is sent (printed to console in development).
+- If the email domain matches the association’s official domain, approval is automatic.
+- Otherwise, an admin must approve the coach before coach pages are accessible.
 
 Log in as a coach:
 ```
@@ -277,6 +306,7 @@ Key endpoints:
 - `GET /tryouts/` (public)
 - `GET/PATCH /availability/me/`
 - `GET /availability/search/` (approved coach or admin)
+- `GET /open-players/` (approved coach or admin)
 - `GET/PATCH /profile/me/` (player only)
 - `POST /contact-requests/`
 - `POST /contact-requests/<id>/respond/`
