@@ -18,7 +18,7 @@ class AssociationSerializer(serializers.ModelSerializer):
             "contact_email",
             "contact_phone",
             "address",
-            "logo",
+            "logo_url",
             "created_at",
             "updated_at",
         )

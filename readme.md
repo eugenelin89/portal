@@ -62,7 +62,7 @@ Social features may be added later with strict privacy controls.
 - Coach signup with email verification + domain-based auto-approval
 - Tryout listings with filtering
 - Association info pages with contact details
-- Association logos (square, 200–800px)
+- Association logos via URL (recommended square, 200–800px)
 - Player profiles (private by default)
 - Optional achievement and highlight showcase
 - Open availability status with allow-listed team visibility

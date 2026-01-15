@@ -676,7 +676,6 @@ import io
 import io
 import io
 import io
-import io
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
 django.setup()
@@ -687,9 +686,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
-from PIL import Image
 from PIL import Image
 from PIL import Image
 from PIL import Image
@@ -833,15 +830,10 @@ from organizations.models import Association
 from regions.models import Region
 
 region = Region.objects.get(code="bc")
-image = Image.new("RGB", (300, 300), color="white")
-buffer = io.BytesIO()
-image.save(buffer, format="PNG")
-buffer.seek(0)
-logo = SimpleUploadedFile("logo.png", buffer.read(), content_type="image/png")
 assoc = Association.objects.create(
     region=region,
     name=f"Assoc {uuid.uuid4().hex[:6]}",
-    logo=logo,
+    logo_url="https://example.com/logo.png",
 )
 
 client = Client(HTTP_HOST="bc.localhost")
@@ -872,6 +864,7 @@ assert "Profile Visibility (MVP)" in architecture
 assert "Post-MVP: Allowed Regions" in architecture
 assert "availability/allowed-teams" in tasks
 assert "contact-requests/<id>/respond/" in tasks
+assert "logo url" in requirements.lower()
 
 print("ok")
 PY

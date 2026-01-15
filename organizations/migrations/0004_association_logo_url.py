@@ -9,7 +9,7 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name="association",
-            name="logo",
-            field=models.ImageField(blank=True, upload_to="associations/logos/"),
+            name="logo_url",
+            field=models.URLField(blank=True),
         ),
     ]

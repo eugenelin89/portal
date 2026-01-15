@@ -69,7 +69,7 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 ### 5.2A Association Info Pages
 - Each association has a public information page.
 - Admins can maintain association details (description, contact info, website).
-- Admins can upload a square logo (200–800px).
+- Admins can set a square logo URL (recommended 200–800px).
 
 ### 5.3 Player Profile
 - Name (or initials)

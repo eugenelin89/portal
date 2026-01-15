@@ -1,15 +1,11 @@
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
-from PIL import Image
 
 from regions.models import Region
 
 
 class Association(models.Model):
-    LOGO_MIN_SIZE = 200
-    LOGO_MAX_SIZE = 800
-
     region = models.ForeignKey(Region, on_delete=models.PROTECT, related_name="associations")
     name = models.CharField(max_length=150)
     short_name = models.CharField(max_length=50, blank=True)
@@ -19,10 +15,9 @@ class Association(models.Model):
     contact_email = models.EmailField(blank=True)
     contact_phone = models.CharField(max_length=30, blank=True)
     address = models.TextField(blank=True)
-    logo = models.ImageField(
-        upload_to="associations/logos/",
+    logo_url = models.URLField(
         blank=True,
-        help_text="Square image, 200–800px.",
+        help_text="Square logo URL, recommended 200–800px.",
     )
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -35,15 +30,7 @@ class Association(models.Model):
         return self.name
 
     def clean(self):
-        if self.logo and hasattr(self.logo, "file"):
-            image = Image.open(self.logo)
-            width, height = image.size
-            if width != height:
-                raise ValidationError({"logo": "Logo must be square (equal width and height)."})
-            if width < self.LOGO_MIN_SIZE or width > self.LOGO_MAX_SIZE:
-                raise ValidationError(
-                    {"logo": f"Logo must be between {self.LOGO_MIN_SIZE}px and {self.LOGO_MAX_SIZE}px."}
-                )
+        return super().clean()
 
 
 class Team(models.Model):

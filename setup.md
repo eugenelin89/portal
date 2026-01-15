@@ -94,7 +94,7 @@ python manage.py createsuperuser
 ```
 
 This account will be used to access the Django admin and manage regions, associations, and approvals.
-Association details (contact info, website, description, logo) can also be maintained in admin.
+Association details (contact info, website, description, logo URL) can also be maintained in admin.
 
 ---
 
