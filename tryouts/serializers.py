@@ -21,4 +21,8 @@ class TryoutEventSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
-        read_only_fields = ("id", "created_at", "updated_at")
+        read_only_fields = ("id", "created_at", "updated_at", "region")
+        extra_kwargs = {
+            "association": {"required": False, "allow_null": True},
+            "team": {"required": False, "allow_null": True},
+        }
