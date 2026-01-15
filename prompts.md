@@ -1981,3 +1981,79 @@ After Prompt #16:
 ✅ Coaches can self‑serve tryout management  
 ✅ Privacy and region isolation remain intact  
 ✅ MVP is ready for a pilot demo with minimal admin support
+
+---
+
+## Prompt 017 — Docs + Requirements Alignment Cleanup
+
+### Goal
+
+Resolve all documentation inconsistencies and requirement mismatches with the current implementation.
+
+This prompt is **documentation-first**: update the .md files so they accurately reflect what exists today, and clearly mark anything not implemented as post‑MVP or future work.
+
+---
+
+## Scope & Constraints
+
+* No new feature development unless required to meet **explicit MVP scope**.
+* Prefer updating docs to reflect implemented behavior.
+* If a requirement is not implemented and is **not** in MVP scope, label it as **post‑MVP**.
+* Keep changes limited to .md files unless a doc correction requires a small code change (rare).
+
+---
+
+## Required Updates
+
+### 1) README.md
+
+* Remove or flag features not implemented (e.g., Team Needs).
+* Align “Core Features” with actual MVP functionality.
+
+### 2) REQUIREMENTS.md
+
+* Reconcile MVP vs post‑MVP:
+  * Move unimplemented items (Team Needs, verification system, per‑section privacy) to a “Future / Post‑MVP” section.
+  * Reflect that **Allowed Teams** is the MVP visibility mechanism (not Allowed Regions).
+* Ensure Contact Requests and Tryouts reflect current API/web behavior.
+
+### 3) ARCHITECTURE.md
+
+* Update privacy model to match implemented controls:
+  * Single profile visibility setting
+  * Allowed Teams for Open status
+* Remove or clearly label unimplemented layers (Allowed Regions, per‑section visibility) as future.
+
+### 4) CODEX_TASKS.md
+
+* Update tasks to match actual API endpoints:
+  * Contact request respond endpoint (single `/respond/`)
+  * Allowed‑teams endpoints
+* Mark completed tasks as done or consolidate remaining work.
+* Ensure the task list mirrors what is still missing vs already implemented.
+
+### 5) MVP_SCOPE.md
+
+* Confirm that MVP scope text reflects current features:
+  * Coach tryout CRUD
+  * Allowed Teams visibility
+  * Contact request flow
+* Mark any unimplemented nice‑to‑haves explicitly as out‑of‑scope.
+
+---
+
+## Acceptance Criteria
+
+* All .md files are consistent with current implementation.
+* No documentation claims a feature that does not exist in code.
+* MVP vs post‑MVP features are clearly separated.
+
+---
+
+## Expected Outcome
+
+After Prompt #17:
+
+✅ Docs reflect the actual MVP behavior  
+✅ Unimplemented features are clearly marked as future work  
+✅ No inconsistencies remain between docs and code

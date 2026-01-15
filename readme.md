@@ -44,7 +44,6 @@ Social features may be added later with strict privacy controls.
 
 ### Coach / Manager
 - Post tryout listings
-- Post team roster needs
 - View Open players (if permitted)
 - Send contact requests
 - Coach signup with email verification; auto-approval when email domain matches association
@@ -63,8 +62,8 @@ Social features may be added later with strict privacy controls.
 - Tryout listings with filtering
 - Player profiles (private by default)
 - Optional achievement and highlight showcase
-- Open availability status with fine-grained privacy
-- Team needs and contact request workflow
+- Open availability status with allow-listed team visibility
+- Contact request workflow
 - Audit logging for sensitive actions
 
 ---

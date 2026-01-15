@@ -85,25 +85,19 @@ Mitigations to avoid cross-region leakage:
 ## 4. Privacy & Visibility Model
 Privacy is **default-deny**.
 
-### 4.1 Profile Visibility Layers
-Each player profile section may have its own visibility:
-- Profile info
-- Achievements
-- Highlights
+### 4.1 Profile Visibility (MVP)
+The MVP uses a single profile visibility setting for the entire profile.
 
-Audience types (examples):
-- Private (only the player/family)
-- Team-only (teams the player is committed to)
-- Coaches-only (verified coaches)
-- Invite-only / Allowed Teams
-- Public (optional)
+Future (post-MVP):
+- Per-section visibility for profile info, achievements, and highlights
+- Additional audience types beyond allow-listed associations
 
 ### 4.2 “Open” Status Visibility
 “Open” status is especially sensitive and must be private by default.
 
 **Controls**
-- Allowed Regions: list of regions that may view Open status
-- Allowed Teams: allow-list of teams that may view Open status
+- MVP: Allowed Teams (allow-list of teams that may view Open status)
+- Post-MVP: Allowed Regions (list of regions that may view Open status)
 
 **Effective rule**
 A team can view a player’s Open status only if:
@@ -236,4 +230,3 @@ Verification indicates authenticity only.
 - Team/league integrations (imports)
 - Richer social features with privacy-scoped audiences
 - Dedicated mobile apps
-

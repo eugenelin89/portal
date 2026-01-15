@@ -1922,3 +1922,30 @@ You may proceed only if:
 * Contact details are only visible after approval
 * Tryout audit logs are recorded
 * Changes are committed
+
+---
+
+## Sanity Check — After Prompt #17 (Docs Alignment)
+
+These checks verify that documentation matches implemented MVP behavior.
+
+---
+
+### 90. Docs Consistency Review
+
+Confirm that docs no longer claim unimplemented features:
+
+* `README.md` does not mention Team Needs.
+* `REQUIREMENTS.md` labels Team Needs, Allowed Regions, and per-section privacy as post‑MVP.
+* `ARCHITECTURE.md` reflects MVP visibility controls (single profile visibility + allowed teams).
+* `CODEX_TASKS.md` matches current API endpoints.
+
+---
+
+### Exit Gate — Prompt #17
+
+You may proceed only if:
+
+* All Prompt #1–#16 checks remain green
+* Documentation matches actual implementation
+* Changes are committed

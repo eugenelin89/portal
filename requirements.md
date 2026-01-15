@@ -78,16 +78,17 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 - Player may link to external highlight videos (e.g. YouTube).
 
 #### 5.3.2 Optional Verification
-- Stats or achievements may be verified by a coach, team, or league.
+- Stats or achievements may be verified by a coach, team, or league (post-MVP).
 - Verification indicates authenticity only.
 
 #### 5.3.3 Privacy & Recruiting Visibility
 - Profiles are private by default.
-- Visibility can be set per section.
+- MVP uses a single profile visibility setting.
+- Per-section visibility is a post-MVP enhancement.
 
 ##### 5.3.3.1 Open Visibility Controls
-- Allowed Regions (BC only by default).
-- Allowed Teams (explicit allow-list).
+- **MVP:** Allowed Teams (explicit allow-list).
+- **Post-MVP:** Allowed Regions.
 - Open status is never public.
 
 ### 5.4 Open Availability Status
@@ -95,7 +96,7 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 - Optional metadata: levels, positions, timing.
 - Auto-expiration supported.
 
-### 5.5 Team Needs
+### 5.5 Team Needs (Post-MVP)
 - Teams can post roster needs.
 - Teams can browse Open players.
 
@@ -149,5 +150,13 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 
 ---
 
-## 10. References
+## 10. Post-MVP Enhancements
+- Team needs postings and browsing.
+- Per-section profile visibility controls.
+- Allowed regions visibility.
+- Verification system for achievements and stats.
+
+---
+
+## 11. References
 - See **ARCHITECTURE.md** for technical design and subdomain-based regional architecture.

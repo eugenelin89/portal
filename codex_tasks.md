@@ -345,9 +345,9 @@ Each task includes:
 **Goal:** API endpoints to manage allowed teams.
 
 **Examples:**
-- `GET /api/v1/availability/allowed-teams/`
-- `POST /api/v1/availability/allowed-teams/` (add)
-- `DELETE /api/v1/availability/allowed-teams/{team_id}/` (remove)
+- `GET /api/v1/availability/allowed-teams/` (list)
+- `POST /api/v1/availability/allowed-teams/` (add by `team_id`)
+- `DELETE /api/v1/availability/allowed-teams/<team_id>/` (remove)
 
 **Acceptance Checks:**
 - Allowed teams list updates correctly
@@ -378,8 +378,8 @@ Each task includes:
 
 **Includes:**
 - Coach: `POST /api/v1/contact-requests/`
-- Player: `GET /api/v1/contact-requests/inbox/`
-- Player: `POST /api/v1/contact-requests/{id}/accept/` and `/decline/`
+- Player: `GET /api/v1/contact-requests/` (inbox for players, sent for coaches)
+- Player: `POST /api/v1/contact-requests/<id>/respond/` with status `approved` or `declined`
 
 **Acceptance Checks:**
 - Coach can create only if permitted (allowed teams visibility)
@@ -502,4 +502,3 @@ Copy/paste this for each task:
 
 **Prompt:**
 "Implement Task X.Y from CODEX_TASKS.md. Follow existing project conventions. Build both **Django web UI** and **DRF API** (serializers, viewsets, routers) where indicated. Enforce region scoping via `request.region` and privacy-first access controls. Include migrations and tests for permissions and filtering. Provide a short summary of changes and how to run/verify."
-

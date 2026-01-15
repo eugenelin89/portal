@@ -790,6 +790,37 @@ assert AuditLog.objects.filter(action="TRYOUT_CANCELED", target_id=tryout_id).ex
 print("ok")
 PY
 
+############################################
+
+# Prompt #17 — Docs Alignment
+
+############################################
+
+print_step 57 "Docs Alignment" "Prompt #17"
+check_command_success "docs reflect implementation" \
+  python - <<'PY'
+import pathlib
+import os
+
+root = pathlib.Path(os.getcwd())
+
+readme = (root / "readme.md").read_text(encoding="utf-8").lower()
+requirements = (root / "requirements.md").read_text(encoding="utf-8")
+architecture = (root / "architecture.md").read_text(encoding="utf-8")
+tasks = (root / "codex_tasks.md").read_text(encoding="utf-8")
+
+assert "team needs" not in readme
+assert "Post-MVP Enhancements" in requirements
+assert "Team Needs (Post-MVP)" in requirements
+assert "MVP: Allowed Teams" in requirements
+assert "Profile Visibility (MVP)" in architecture
+assert "Post-MVP: Allowed Regions" in architecture
+assert "availability/allowed-teams" in tasks
+assert "contact-requests/<id>/respond/" in tasks
+
+print("ok")
+PY
+
 print_step 42 "Web UI: Anonymous Dashboard Requires Login" "Prompt #12"
 # Anonymous users should be redirected to login.
 # Location may include ?next=/dashboard/
