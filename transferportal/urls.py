@@ -5,6 +5,7 @@ from django.urls import include, path
 from django.views.generic import TemplateView
 
 from accounts import views as account_views
+from organizations import web_views as organization_views
 from tryouts import web_views as tryout_views
 
 urlpatterns = [
@@ -13,6 +14,11 @@ urlpatterns = [
     path("", TemplateView.as_view(template_name="home.html"), name="home"),
     path("tryouts/", tryout_views.tryout_list, name="tryout_list"),
     path("tryouts/<int:tryout_id>/", tryout_views.tryout_detail, name="tryout_detail"),
+    path(
+        "associations/<int:association_id>/",
+        organization_views.association_detail,
+        name="association_detail",
+    ),
     path("dashboard/", account_views.dashboard_router, name="dashboard"),
     path("player/", account_views.player_dashboard, name="player_dashboard"),
     path("player/profile/", account_views.player_profile, name="player_profile"),

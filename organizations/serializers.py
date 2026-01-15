@@ -12,6 +12,12 @@ class AssociationSerializer(serializers.ModelSerializer):
             "name",
             "short_name",
             "is_active",
+            "official_domain",
+            "website_url",
+            "description",
+            "contact_email",
+            "contact_phone",
+            "address",
             "created_at",
             "updated_at",
         )

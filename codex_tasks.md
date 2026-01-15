@@ -162,13 +162,22 @@ Each task includes:
 **Goal:** Add region-scoped `Association` and `Team`.
 
 **Fields (suggested):**
-- Association: `name`, `region`
+- Association: `name`, `region`, optional public info (website, description, contact)
 - Team: `association`, `name`, `age_group`, `level`, `region` (derived or explicit)
 
 **Files/Areas:** `leagues/models.py` (or `orgs/models.py`), `admin.py`
 
 **Acceptance Checks:**
 - Admin can create associations and teams for BC
+
+### Task 3.3 — Association Info Page (Web UI)
+**Goal:** Public association detail page with admin-managed details.
+
+**Files/Areas:** `organizations/models.py`, `organizations/admin.py`, `organizations/web_views.py`, templates
+
+**Acceptance Checks:**
+- Association page renders in the current region
+- Links appear from tryout list/detail and coach teams
 
 ---
 

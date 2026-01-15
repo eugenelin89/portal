@@ -5,7 +5,7 @@ from organizations.models import Association, Team, TeamCoach
 
 @admin.register(Association)
 class AssociationAdmin(admin.ModelAdmin):
-    list_display = ("name", "region", "official_domain", "is_active")
+    list_display = ("name", "region", "official_domain", "website_url", "is_active")
     list_filter = ("region", "is_active")
     search_fields = ("name", "short_name", "official_domain")
 

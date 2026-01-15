@@ -10,7 +10,11 @@
           <div class="card shadow-sm h-100">
             <div class="card-body p-4">
               <h2 class="h5 mb-2">{{ membership.team.name }}</h2>
-              <p class="text-muted mb-1">{{ membership.team.association.name }}</p>
+              <p class="text-muted mb-1">
+                <a class="text-decoration-none" href="{% url 'association_detail' membership.team.association.id %}">
+                  {{ membership.team.association.name }}
+                </a>
+              </p>
               <p class="mb-0">Age group: {{ membership.team.age_group }}{% if membership.team.level %} · {{ membership.team.level }}{% endif %}</p>
             </div>
           </div>

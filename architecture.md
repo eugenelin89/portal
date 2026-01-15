@@ -194,6 +194,7 @@ Verification indicates authenticity only.
 ### 9.1 MVP Web
 - Responsive templates (Bootstrap/Tailwind)
 - Phone-first flows: browse tryouts, toggle Open, handle requests
+- Association info pages with public contact details
 
 ### 9.2 APIs for Mobile
 - Add DRF endpoints for:

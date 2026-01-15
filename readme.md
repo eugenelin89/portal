@@ -51,6 +51,7 @@ Social features may be added later with strict privacy controls.
 ### Association / League Admin
 - Approve coach accounts
 - Manage teams and associations
+- Maintain association info pages
 - Configure tryout rules and windows
 - Review audit logs
 
@@ -60,6 +61,7 @@ Social features may be added later with strict privacy controls.
 - Role-based authentication and access control
 - Coach signup with email verification + domain-based auto-approval
 - Tryout listings with filtering
+- Association info pages with contact details
 - Player profiles (private by default)
 - Optional achievement and highlight showcase
 - Open availability status with allow-listed team visibility

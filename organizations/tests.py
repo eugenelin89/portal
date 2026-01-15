@@ -68,3 +68,23 @@ class OrganizationModelTests(TestCase):
         team = Team(region=on, association=assoc_bc, name="Bad Team", age_group="13U")
         with self.assertRaises(ValidationError):
             team.full_clean()
+
+
+class OrganizationWebTests(TestCase):
+    def test_association_detail_region_scoped(self):
+        bc = Region.objects.get(code="bc")
+        on = Region.objects.create(code="on", name="Ontario", is_active=True)
+        assoc_bc = Association.objects.create(region=bc, name="BC Assoc", is_active=True)
+        assoc_on = Association.objects.create(region=on, name="ON Assoc", is_active=True)
+
+        response = self.client.get(
+            f"/associations/{assoc_bc.id}/",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.get(
+            f"/associations/{assoc_on.id}/",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 404)

@@ -49,6 +49,7 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 - Verify coaches and teams.
 - Configure tryout windows and rules.
 - View audit logs.
+- Maintain association info pages.
 
 ---
 
@@ -64,6 +65,10 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 - Teams can post tryout dates, locations, and registration links.
 - Families can browse and filter tryouts.
 - Tryout edits are logged.
+
+### 5.2A Association Info Pages
+- Each association has a public information page.
+- Admins can maintain association details (description, contact info, website).
 
 ### 5.3 Player Profile
 - Name (or initials)

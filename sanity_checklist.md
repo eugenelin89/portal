@@ -1912,6 +1912,22 @@ Expected:
 
 ---
 
+### 90. Association Info Pages
+
+Visit an association detail page:
+
+```
+http://bc.localhost:8000/associations/<id>/
+```
+
+Expected:
+
+* Page renders for associations in the current region
+* Cross-region associations return 404
+* Links appear from tryouts and coach team views
+
+---
+
 ### Exit Gate — Prompt #16
 
 You may proceed only if:
@@ -1921,6 +1937,7 @@ You may proceed only if:
 * API filters and allowed‑teams endpoints work
 * Contact details are only visible after approval
 * Tryout audit logs are recorded
+* Association info pages render correctly
 * Changes are committed
 
 ---
@@ -1931,7 +1948,7 @@ These checks verify that documentation matches implemented MVP behavior.
 
 ---
 
-### 90. Docs Consistency Review
+### 91. Docs Consistency Review
 
 Confirm that docs no longer claim unimplemented features:
 

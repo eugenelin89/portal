@@ -97,10 +97,16 @@ Each tryout card includes:
 - Date range
 - Location
 - Register button (external link)
+- Association link (info page)
 
 ### 4.3 Tryout detail
 
 Click a tryout card to view details and registration.
+
+### 4.4 Association info
+
+Association pages include public details and contact information.
+Links appear on tryout list/detail and team pages.
 
 ---
 

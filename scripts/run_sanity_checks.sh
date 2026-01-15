@@ -796,7 +796,32 @@ PY
 
 ############################################
 
-print_step 57 "Docs Alignment" "Prompt #17"
+print_step 57 "Association Info Pages" "Prompt #16"
+check_command_success "association info page works" \
+  python - <<'PY'
+import django
+import os
+import uuid
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.test import Client
+
+from organizations.models import Association
+from regions.models import Region
+
+region = Region.objects.get(code="bc")
+assoc = Association.objects.create(region=region, name=f"Assoc {uuid.uuid4().hex[:6]}")
+
+client = Client(HTTP_HOST="bc.localhost")
+response = client.get(f"/associations/{assoc.id}/")
+assert response.status_code == 200, response.status_code
+
+print("ok")
+PY
+
+print_step 58 "Docs Alignment" "Prompt #17"
 check_command_success "docs reflect implementation" \
   python - <<'PY'
 import pathlib

@@ -17,6 +17,12 @@
                   {% endif %}
                 {% endif %}
               </div>
+              <p class="text-muted mb-0">
+                Association:
+                <a class="text-decoration-none" href="{% url 'association_detail' tryout.association.id %}">
+                  {{ tryout.association.name }}
+                </a>
+              </p>
             </div>
             <div>
               <a class="btn btn-success btn-lg" href="{{ tryout.registration_url }}" target="_blank" rel="noopener">Register</a>

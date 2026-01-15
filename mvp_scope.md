@@ -45,6 +45,7 @@ If a feature does not directly support this loop, it is **out of scope for the M
 - Players/families can:
   - Browse tryouts
   - Filter by age group, level, and date
+  - View association info pages linked from tryouts
 
 ---
 
@@ -98,6 +99,7 @@ For MVP, **choose ONE visibility mechanism**:
   - Approve coach accounts
   - Create regions (BC only in MVP)
   - Create associations and teams
+  - Maintain association info pages
 
 ---
 
