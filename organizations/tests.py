@@ -1,7 +1,11 @@
+import io
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from rest_framework.test import APIClient
+from PIL import Image
 
 from organizations.models import Association, Team
 from regions.models import Region
@@ -68,6 +72,26 @@ class OrganizationModelTests(TestCase):
         team = Team(region=on, association=assoc_bc, name="Bad Team", age_group="13U")
         with self.assertRaises(ValidationError):
             team.full_clean()
+
+    def test_association_logo_dimension_validation(self):
+        bc = Region.objects.get(code="bc")
+        assoc = Association(region=bc, name="Logo Assoc")
+
+        small_image = Image.new("RGB", (100, 100), color="white")
+        buffer = io.BytesIO()
+        small_image.save(buffer, format="PNG")
+        buffer.seek(0)
+        assoc.logo = SimpleUploadedFile("small.png", buffer.read(), content_type="image/png")
+
+        with self.assertRaises(ValidationError):
+            assoc.full_clean()
+
+        valid_image = Image.new("RGB", (300, 300), color="white")
+        buffer = io.BytesIO()
+        valid_image.save(buffer, format="PNG")
+        buffer.seek(0)
+        assoc.logo = SimpleUploadedFile("valid.png", buffer.read(), content_type="image/png")
+        assoc.full_clean()
 
 
 class OrganizationWebTests(TestCase):

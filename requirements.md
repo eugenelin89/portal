@@ -69,6 +69,7 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 ### 5.2A Association Info Pages
 - Each association has a public information page.
 - Admins can maintain association details (description, contact info, website).
+- Admins can upload a square logo (200–800px).
 
 ### 5.3 Player Profile
 - Name (or initials)
@@ -92,8 +93,8 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 - Per-section visibility is a post-MVP enhancement.
 
 ##### 5.3.3.1 Open Visibility Controls
-- **MVP:** Allowed Teams (explicit allow-list).
-- **Post-MVP:** Allowed Regions.
+- MVP: Allowed Teams (explicit allow-list).
+- Post-MVP: Allowed Regions.
 - Open status is never public.
 
 ### 5.4 Open Availability Status

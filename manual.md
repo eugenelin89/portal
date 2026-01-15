@@ -107,6 +107,7 @@ Click a tryout card to view details and registration.
 
 Association pages include public details and contact information.
 Links appear on tryout list/detail and team pages.
+Logos appear when provided.
 
 ---
 
@@ -309,6 +310,7 @@ Admin can:
 - Manage regions, associations, teams
 - Approve coach accounts
 - Review tryouts and contact requests
+- Upload association logos (square, 200–800px)
 
 ---
 

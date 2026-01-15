@@ -9,6 +9,11 @@
         <div class="card-body p-4">
           <div class="d-flex flex-column gap-3">
             <div>
+              {% if association.logo %}
+                <div class="mb-3">
+                  <img src="{{ association.logo.url }}" alt="{{ association.name }} logo" class="img-fluid" style="max-width: 160px;">
+                </div>
+              {% endif %}
               <h1 class="h4 mb-1">{{ association.name }}</h1>
               {% if association.short_name %}
                 <p class="text-muted mb-0">{{ association.short_name }}</p>

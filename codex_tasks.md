@@ -178,6 +178,7 @@ Each task includes:
 **Acceptance Checks:**
 - Association page renders in the current region
 - Links appear from tryout list/detail and coach teams
+ - Logo displays when uploaded (square, 200–800px)
 
 ---
 

@@ -671,12 +671,30 @@ check_command_success "mvp closeout checks pass" \
 import django
 import os
 import uuid
+import io
+import io
+import io
+import io
+import io
+import io
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
 django.setup()
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
+from PIL import Image
+from PIL import Image
+from PIL import Image
+from PIL import Image
+from PIL import Image
+from PIL import Image
 from rest_framework.test import APIClient
 
 from accounts.models import AccountProfile
@@ -802,17 +820,29 @@ check_command_success "association info page works" \
 import django
 import os
 import uuid
+import io
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
 django.setup()
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client
+from PIL import Image
 
 from organizations.models import Association
 from regions.models import Region
 
 region = Region.objects.get(code="bc")
-assoc = Association.objects.create(region=region, name=f"Assoc {uuid.uuid4().hex[:6]}")
+image = Image.new("RGB", (300, 300), color="white")
+buffer = io.BytesIO()
+image.save(buffer, format="PNG")
+buffer.seek(0)
+logo = SimpleUploadedFile("logo.png", buffer.read(), content_type="image/png")
+assoc = Association.objects.create(
+    region=region,
+    name=f"Assoc {uuid.uuid4().hex[:6]}",
+    logo=logo,
+)
 
 client = Client(HTTP_HOST="bc.localhost")
 response = client.get(f"/associations/{assoc.id}/")

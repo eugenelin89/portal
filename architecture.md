@@ -195,6 +195,7 @@ Verification indicates authenticity only.
 - Responsive templates (Bootstrap/Tailwind)
 - Phone-first flows: browse tryouts, toggle Open, handle requests
 - Association info pages with public contact details
+- Association logos (square, 200–800px)
 
 ### 9.2 APIs for Mobile
 - Add DRF endpoints for:
