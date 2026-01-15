@@ -13,6 +13,7 @@ class ContactRequestSerializer(serializers.ModelSerializer):
     requesting_team_id = serializers.IntegerField(source="requesting_team.id", read_only=True)
     requested_by_id = serializers.IntegerField(source="requested_by.id", read_only=True)
     player_email = serializers.SerializerMethodField()
+    player_phone = serializers.SerializerMethodField()
 
     class Meta:
         model = ContactRequest
@@ -26,6 +27,7 @@ class ContactRequestSerializer(serializers.ModelSerializer):
             "created_at",
             "responded_at",
             "player_email",
+            "player_phone",
         )
 
     def get_player_email(self, obj):
@@ -35,6 +37,16 @@ class ContactRequestSerializer(serializers.ModelSerializer):
         if request and request.user and request.user.is_authenticated:
             if request.user == obj.requested_by or request.user.is_staff or request.user.is_superuser:
                 return obj.player.email
+        return None
+
+    def get_player_phone(self, obj):
+        request = self.context.get("request")
+        if obj.status != ContactRequest.Status.APPROVED:
+            return None
+        if request and request.user and request.user.is_authenticated:
+            if request.user == obj.requested_by or request.user.is_staff or request.user.is_superuser:
+                profile = getattr(obj.player, "profile", None)
+                return profile.phone_number if profile and profile.phone_number else None
         return None
 
 

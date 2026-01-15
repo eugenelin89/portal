@@ -6,6 +6,7 @@ from rest_framework.test import APIRequestFactory
 from accounts.models import AccountProfile
 from accounts.permissions import IsAdminRole, IsApprovedCoach
 from availability.models import PlayerAvailability
+from contacts.models import ContactRequest
 from organizations.models import Association, Team, TeamCoach
 from profiles.models import PlayerProfile
 from regions.models import Region
@@ -246,3 +247,54 @@ class PlayerSignupTests(TestCase):
         user.refresh_from_db()
         self.assertTrue(user.is_active)
         self.assertTrue(self.client.login(username=user.username, password="testpass123"))
+
+
+class CoachContactDetailsTests(TestCase):
+    def setUp(self):
+        self.region = Region.objects.get(code="bc")
+        self.assoc = Association.objects.create(region=self.region, name="BC Assoc")
+        self.team = Team.objects.create(region=self.region, association=self.assoc, name="BC Team", age_group="13U")
+
+        self.coach = User.objects.create_user(username="coach_contact", password="testpass")
+        self.coach.profile.role = AccountProfile.Roles.COACH
+        self.coach.profile.is_coach_approved = True
+        self.coach.profile.save()
+        TeamCoach.objects.create(user=self.coach, team=self.team, is_active=True)
+
+        self.player = User.objects.create_user(
+            username="player_contact",
+            password="testpass",
+            email="player_contact@example.com",
+        )
+        self.player.profile.role = AccountProfile.Roles.PLAYER
+        self.player.profile.phone_number = "555-1111"
+        self.player.profile.save()
+
+    def test_contact_details_visible_only_when_approved(self):
+        ContactRequest.objects.create(
+            player=self.player,
+            requesting_team=self.team,
+            requested_by=self.coach,
+            region=self.region,
+            status=ContactRequest.Status.PENDING,
+        )
+
+        self.assertTrue(self.client.login(username="coach_contact", password="testpass"))
+        response = self.client.get("/coach/requests/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        self.assertNotIn("player_contact@example.com", content)
+        self.assertNotIn("555-1111", content)
+
+        ContactRequest.objects.create(
+            player=self.player,
+            requesting_team=self.team,
+            requested_by=self.coach,
+            region=self.region,
+            status=ContactRequest.Status.APPROVED,
+        )
+        response = self.client.get("/coach/requests/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        content = response.content.decode("utf-8")
+        self.assertIn("player_contact@example.com", content)
+        self.assertIn("555-1111", content)

@@ -1871,3 +1871,113 @@ After Prompt #15:
 ✅ Players onboard via Prompt #15
 ✅ No admin intervention required for basic usage
 ✅ MVP is production‑ready for pilot launch
+
+---
+
+## Prompt 016 — MVP Closeout (Tryouts + API Gaps + Contact Details)
+
+### Goal
+
+Complete remaining MVP gaps so the demo flow matches CODEX_TASKS.md end‑to‑end:
+
+* Approved coaches can manage their own tryouts.
+* API capabilities match the web UI for tryouts and availability visibility.
+* Approved contact requests reveal contact details to coaches.
+* Audit logging covers tryout actions.
+
+---
+
+## Scope & Constraints
+
+* Preserve region scoping and privacy‑first rules.
+* Approved coaches only; no role escalation.
+* Use existing models and patterns where possible.
+* Keep UI minimal, mobile‑friendly, and consistent with current templates.
+
+---
+
+## Requirements
+
+### 1) Tryout CRUD — Web UI
+
+* Add coach‑only create/edit/cancel flows for tryouts.
+* Coaches can only manage tryouts for teams they are assigned to.
+* Cancel should set `is_active = False` (no hard deletes).
+
+### 2) Tryout CRUD — API
+
+* Enable approved coach CRUD on `/api/v1/tryouts/`.
+* Enforce team membership for writes.
+* Region must come from `request.region` (ignore client‑supplied region).
+
+### 3) Tryout Filters — API
+
+Add query filters:
+
+* `age_group`
+* `level`
+* `date_from`
+* `date_to`
+
+### 4) Allowed Teams API (Availability)
+
+Add endpoints for players to manage allow‑listed teams:
+
+* `GET /api/v1/availability/allowed-teams/`
+* `POST /api/v1/availability/allowed-teams/` (add by `team_id`)
+* `DELETE /api/v1/availability/allowed-teams/{team_id}/`
+
+Scope by region and authenticated player only.
+
+### 5) Contact Request Details (Coach View)
+
+* When a request is approved, reveal the player’s contact details to the requesting coach.
+* At minimum, show player email; include phone if present.
+* Ensure contact details are hidden for pending/declined requests.
+
+### 6) Audit Logging (Tryouts)
+
+* Log tryout create/edit/cancel actions to `AuditLog`.
+* Include actor, region, and tryout id.
+
+---
+
+## Required Updates
+
+Codex must:
+
+1. Implement the features above
+2. Update:
+
+   * `PROMPTS.md` (append Prompt #16)
+   * `SANITY_CHECKLIST.md` (new verification section)
+   * `scripts/run_sanity_checks.sh` (automated checks)
+3. Add tests for:
+
+   * Coach tryout CRUD permissions
+   * Tryout API filtering
+   * Allowed‑teams API
+   * Contact detail visibility rules
+   * Audit log entries for tryouts
+
+---
+
+## Acceptance Criteria
+
+* Coach can create/edit/cancel their tryouts (web + API).
+* API filters return expected tryout subsets.
+* Player can manage allow‑listed teams via API.
+* Approved requests reveal contact info to the requesting coach only.
+* Tryout actions appear in audit logs.
+* All tests pass.
+
+---
+
+## Expected Outcome
+
+After Prompt #16:
+
+✅ MVP demo flow is complete and consistent across web + API  
+✅ Coaches can self‑serve tryout management  
+✅ Privacy and region isolation remain intact  
+✅ MVP is ready for a pilot demo with minimal admin support

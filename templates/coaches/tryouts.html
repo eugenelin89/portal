@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}My Tryouts | BC Baseball Transfer Portal{% endblock %}
+
+{% block content %}
+  <div class="d-flex justify-content-end mb-3">
+    <a class="btn btn-primary" href="{% url 'coach_tryout_create' %}">New tryout</a>
+  </div>
+  {% if tryouts %}
+    <div class="vstack gap-3">
+      {% for tryout in tryouts %}
+        <div class="card shadow-sm">
+          <div class="card-body p-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
+              <div>
+                <h2 class="h5 mb-1">{{ tryout.name }}</h2>
+                <p class="text-muted mb-1">{{ tryout.team.name }}</p>
+                <p class="text-muted mb-0">
+                  {{ tryout.start_date|date:"M j, Y" }} - {{ tryout.end_date|date:"M j, Y" }}
+                </p>
+              </div>
+              <div class="d-flex flex-column gap-2">
+                <a class="btn btn-outline-primary" href="{% url 'coach_tryout_edit' tryout.id %}">Edit</a>
+                <form method="post" action="{% url 'coach_tryout_cancel' tryout.id %}">
+                  {% csrf_token %}
+                  <button class="btn btn-outline-danger" type="submit">Cancel</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    {% url 'coach_tryout_create' as new_tryout_url %}
+    {% include "partials/_empty_state.html" with title="No tryouts yet" description="Create a tryout for one of your teams." action_url=new_tryout_url action_label="New tryout" %}
+  {% endif %}
+{% endblock %}

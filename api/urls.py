@@ -19,6 +19,16 @@ urlpatterns = [
     path("health/", views.health, name="health"),
     path("me/", views.me, name="me"),
     path("availability/me/", availability_views.availability_me, name="availability_me"),
+    path(
+        "availability/allowed-teams/",
+        availability_views.availability_allowed_teams,
+        name="availability_allowed_teams",
+    ),
+    path(
+        "availability/allowed-teams/<int:team_id>/",
+        availability_views.availability_allowed_team_delete,
+        name="availability_allowed_team_delete",
+    ),
     path("availability/search/", availability_views.availability_search, name="availability_search"),
     path("profile/me/", profile_views.profile_me, name="profile_me"),
     path("contact-requests/<int:pk>/respond/", contact_request_respond, name="contact_request_respond"),

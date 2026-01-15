@@ -1820,3 +1820,105 @@ You may proceed only if:
 * Profile data persists correctly
 * Availability initialization behaves correctly
 * Changes are committed
+
+---
+
+## Sanity Check — After Prompt #16 (MVP Closeout)
+
+These checks verify tryout CRUD for coaches, API parity, allowed-teams management, and contact detail visibility.
+
+---
+
+### 84. Migrate & Run Tests
+
+```bash
+python manage.py migrate
+python manage.py test
+```
+
+Expected:
+
+* New migrations apply cleanly
+* Tryout CRUD, filters, allowed teams, and contact detail tests pass
+
+---
+
+### 85. Coach Tryout Management (Web)
+
+Log in as an approved coach and visit:
+
+```
+http://bc.localhost:8000/coach/tryouts/
+```
+
+Expected:
+
+* Coach can create a new tryout
+* Edit updates are saved
+* Cancel hides the tryout from public browse
+
+---
+
+### 86. Tryout API Filters
+
+Use the API list endpoint with filters:
+
+```
+http://bc.localhost:8000/api/v1/tryouts/?age_group=13U
+http://bc.localhost:8000/api/v1/tryouts/?level=AAA
+```
+
+Expected:
+
+* Only matching tryouts are returned
+
+---
+
+### 87. Allowed Teams API
+
+As a player, manage allow‑listed teams:
+
+```
+GET /api/v1/availability/allowed-teams/
+POST /api/v1/availability/allowed-teams/   (team_id required)
+DELETE /api/v1/availability/allowed-teams/<team_id>/
+```
+
+Expected:
+
+* Add/remove works
+* Only the player can modify their list
+
+---
+
+### 88. Contact Details on Approval
+
+After a player approves a request:
+
+Expected:
+
+* Coach view shows player email (and phone if present)
+* Pending/declined requests do not show contact info
+
+---
+
+### 89. Tryout Audit Logs
+
+Create/edit/cancel a tryout.
+
+Expected:
+
+* AuditLog entries exist for TRYOUT_CREATED/TRYOUT_UPDATED/TRYOUT_CANCELED
+
+---
+
+### Exit Gate — Prompt #16
+
+You may proceed only if:
+
+* All Prompt #1–#15 checks remain green
+* Tryout CRUD works end‑to‑end (web + API)
+* API filters and allowed‑teams endpoints work
+* Contact details are only visible after approval
+* Tryout audit logs are recorded
+* Changes are committed

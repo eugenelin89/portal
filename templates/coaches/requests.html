@@ -18,6 +18,14 @@
                 {% if request_item.message %}
                   <p class="mb-0">{{ request_item.message }}</p>
                 {% endif %}
+                {% if request_item.status == "approved" %}
+                  <div class="mt-2 small text-muted">
+                    <div>Email: {{ request_item.player.email }}</div>
+                    {% if request_item.player.profile.phone_number %}
+                      <div>Phone: {{ request_item.player.profile.phone_number }}</div>
+                    {% endif %}
+                  </div>
+                {% endif %}
               </div>
               <div class="d-flex flex-column align-items-md-end gap-2">
                 {% if request_item.status == "pending" %}

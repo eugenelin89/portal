@@ -659,6 +659,137 @@ assert "/coach" in loc, f"expected coach dashboard redirect, got Location={loc}"
 print("ok")
 PY
 
+############################################
+
+# Prompt #16 — MVP Closeout
+
+############################################
+
+print_step 56 "Tryouts + Allowed Teams + Contact Details" "Prompt #16"
+check_command_success "mvp closeout checks pass" \
+  python - <<'PY'
+import django
+import os
+import uuid
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.contrib.auth import get_user_model
+from django.test import Client
+from rest_framework.test import APIClient
+
+from accounts.models import AccountProfile
+from availability.models import PlayerAvailability
+from contacts.models import AuditLog, ContactRequest
+from organizations.models import Association, Team, TeamCoach
+from regions.models import Region
+from tryouts.models import TryoutEvent
+
+User = get_user_model()
+
+region = Region.objects.get(code="bc")
+assoc = Association.objects.create(region=region, name="Closeout Assoc")
+team = Team.objects.create(region=region, association=assoc, name="Closeout Team", age_group="13U", level="AAA")
+
+suffix = uuid.uuid4().hex[:6]
+coach = User.objects.create_user(username=f"closeout_coach_{suffix}", password="testpass")
+coach.profile.role = AccountProfile.Roles.COACH
+coach.profile.is_coach_approved = True
+coach.profile.save()
+TeamCoach.objects.create(user=coach, team=team, is_active=True)
+
+player = User.objects.create_user(
+    username=f"closeout_player_{suffix}",
+    password="testpass",
+    email=f"closeout_player_{suffix}@example.com",
+)
+player.profile.role = AccountProfile.Roles.PLAYER
+player.profile.phone_number = "555-1212"
+player.profile.save()
+PlayerAvailability.objects.create(player=player, region=region, is_open=True)
+
+api_client = APIClient()
+api_client.force_authenticate(user=coach)
+
+response = api_client.post(
+    "/api/v1/tryouts/",
+    {
+        "team": team.id,
+        "name": "Closeout Tryout",
+        "start_date": "2025-05-10",
+        "end_date": "2025-05-11",
+        "location": "Field",
+        "registration_url": "https://example.com",
+    },
+    format="json",
+    HTTP_HOST="bc.localhost:8000",
+)
+assert response.status_code == 201, response.status_code
+tryout_id = response.data["id"]
+assert AuditLog.objects.filter(action="TRYOUT_CREATED", target_id=tryout_id).exists()
+
+response = api_client.patch(
+    f"/api/v1/tryouts/{tryout_id}/",
+    {"name": "Updated Tryout"},
+    format="json",
+    HTTP_HOST="bc.localhost:8000",
+)
+assert response.status_code == 200, response.status_code
+assert AuditLog.objects.filter(action="TRYOUT_UPDATED", target_id=tryout_id).exists()
+
+response = api_client.get(
+    "/api/v1/tryouts/?age_group=13U",
+    HTTP_HOST="bc.localhost:8000",
+)
+assert response.status_code == 200, response.status_code
+assert any(item["id"] == tryout_id for item in response.data)
+
+api_client.force_authenticate(user=player)
+response = api_client.post(
+    "/api/v1/availability/allowed-teams/",
+    {"team_id": team.id},
+    format="json",
+    HTTP_HOST="bc.localhost:8000",
+)
+assert response.status_code == 200, response.status_code
+assert response.data[0]["id"] == team.id
+
+response = api_client.delete(
+    f"/api/v1/availability/allowed-teams/{team.id}/",
+    HTTP_HOST="bc.localhost:8000",
+)
+assert response.status_code == 204, response.status_code
+
+contact_request = ContactRequest.objects.create(
+    player=player,
+    requesting_team=team,
+    requested_by=coach,
+    region=region,
+    status=ContactRequest.Status.APPROVED,
+)
+
+client = Client(HTTP_HOST="bc.localhost")
+assert client.login(username=coach.username, password="testpass") is True
+response = client.get("/coach/requests/")
+assert response.status_code == 200, response.status_code
+content = response.content.decode("utf-8")
+assert player.email in content
+assert "555-1212" in content
+
+api_client.force_authenticate(user=coach)
+response = api_client.delete(
+    f"/api/v1/tryouts/{tryout_id}/",
+    HTTP_HOST="bc.localhost:8000",
+)
+assert response.status_code == 204, response.status_code
+tryout = TryoutEvent.objects.get(id=tryout_id)
+assert tryout.is_active is False
+assert AuditLog.objects.filter(action="TRYOUT_CANCELED", target_id=tryout_id).exists()
+
+print("ok")
+PY
+
 print_step 42 "Web UI: Anonymous Dashboard Requires Login" "Prompt #12"
 # Anonymous users should be redirected to login.
 # Location may include ?next=/dashboard/

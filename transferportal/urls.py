@@ -38,6 +38,18 @@ urlpatterns = [
     ),
     path("coach/requests/", account_views.coach_requests, name="coach_requests"),
     path("coach/requests/new/", account_views.coach_request_new, name="coach_request_new"),
+    path("coach/tryouts/", tryout_views.coach_tryout_list, name="coach_tryout_list"),
+    path("coach/tryouts/new/", tryout_views.coach_tryout_create, name="coach_tryout_create"),
+    path(
+        "coach/tryouts/<int:tryout_id>/edit/",
+        tryout_views.coach_tryout_edit,
+        name="coach_tryout_edit",
+    ),
+    path(
+        "coach/tryouts/<int:tryout_id>/cancel/",
+        tryout_views.coach_tryout_cancel,
+        name="coach_tryout_cancel",
+    ),
     path("signup/coach/", account_views.coach_signup, name="coach_signup"),
     path("signup/coach/verify/<str:token>/", account_views.coach_verify, name="coach_verify"),
     path("signup/player/", account_views.player_signup, name="player_signup"),

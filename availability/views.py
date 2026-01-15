@@ -12,7 +12,10 @@ from availability.serializers import (
     PlayerAvailabilityMeSerializer,
     PlayerAvailabilitySearchSerializer,
 )
+from organizations.models import Team
+from organizations.serializers import TeamSerializer
 from organizations.models import TeamCoach
+from regions.utils import get_request_region
 
 
 AUDIT_COMMITTED_SET = "COMMITTED_SET"
@@ -90,3 +93,50 @@ def availability_search(request):
 
     serializer = PlayerAvailabilitySearchSerializer(queryset, many=True)
     return Response(serializer.data)
+
+
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated, IsPlayerRole])
+def availability_allowed_teams(request):
+    region = get_request_region(request)
+    if region is None:
+        return Response({"detail": "Region is required."}, status=400)
+
+    availability, created = PlayerAvailability.objects.get_or_create(
+        player=request.user,
+        defaults={"region": region},
+    )
+    if not created and availability.region_id != region.id:
+        return Response({"detail": "Availability region mismatch."}, status=400)
+
+    if request.method == "POST":
+        team_id = request.data.get("team_id")
+        if not team_id:
+            return Response({"detail": "team_id is required."}, status=400)
+        team = Team.objects.filter(id=team_id, region=region).first()
+        if team is None:
+            return Response({"detail": "Team not found in region."}, status=404)
+        availability.allowed_teams.add(team)
+
+    teams = availability.allowed_teams.filter(region=region).order_by("name")
+    serializer = TeamSerializer(teams, many=True)
+    return Response(serializer.data)
+
+
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, IsPlayerRole])
+def availability_allowed_team_delete(request, team_id):
+    region = get_request_region(request)
+    if region is None:
+        return Response({"detail": "Region is required."}, status=400)
+
+    availability = PlayerAvailability.objects.filter(player=request.user, region=region).first()
+    if availability is None:
+        return Response({"detail": "Availability not found."}, status=404)
+
+    team = Team.objects.filter(id=team_id, region=region).first()
+    if team is None:
+        return Response({"detail": "Team not found in region."}, status=404)
+
+    availability.allowed_teams.remove(team)
+    return Response(status=204)

@@ -144,3 +144,41 @@ class AvailabilityApiTests(TestCase):
         response = self.client.get("/api/v1/availability/search/", HTTP_HOST="bc.localhost:8000")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
+
+    def test_player_can_manage_allowed_teams(self):
+        self.client.force_authenticate(user=self.player)
+        response = self.client.post(
+            "/api/v1/availability/allowed-teams/",
+            {"team_id": self.team_bc.id},
+            format="json",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+        self.assertEqual(response.data[0]["id"], self.team_bc.id)
+
+        response = self.client.delete(
+            f"/api/v1/availability/allowed-teams/{self.team_bc.id}/",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 204)
+        response = self.client.get("/api/v1/availability/allowed-teams/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 0)
+
+    def test_allowed_teams_requires_player_role(self):
+        self.client.force_authenticate(user=self.coach)
+        response = self.client.get("/api/v1/availability/allowed-teams/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 403)
+
+    def test_allowed_teams_region_isolation(self):
+        self.client.force_authenticate(user=self.player)
+        assoc_on = Association.objects.create(region=self.on, name="ON Assoc")
+        team_on = Team.objects.create(region=self.on, association=assoc_on, name="ON Team", age_group="13U")
+        response = self.client.post(
+            "/api/v1/availability/allowed-teams/",
+            {"team_id": team_on.id},
+            format="json",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 404)

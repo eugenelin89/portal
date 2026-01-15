@@ -227,6 +227,18 @@ http://bc.localhost:8000/coach/teams/
 
 Shows teams you are assigned to via team memberships.
 
+### 6.2A Manage tryouts
+
+Visit:
+```
+http://bc.localhost:8000/coach/tryouts/
+```
+
+You can:
+- Create tryouts for your teams
+- Edit existing tryouts
+- Cancel a tryout (removes it from public listings)
+
 ### 6.3 Open players
 
 Visit:
@@ -268,6 +280,8 @@ Track request status:
 - Approved
 - Declined
 
+When approved, player contact details (email, phone if provided) are shown.
+
 ---
 
 ## 7) Admin Workflow
@@ -305,6 +319,8 @@ Key endpoints:
 - `GET /me/`
 - `GET /tryouts/` (public)
 - `GET/PATCH /availability/me/`
+- `GET/POST /availability/allowed-teams/`
+- `DELETE /availability/allowed-teams/<team_id>/`
 - `GET /availability/search/` (approved coach or admin)
 - `GET /open-players/` (approved coach or admin)
 - `GET/PATCH /profile/me/` (player only)

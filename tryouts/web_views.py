@@ -1,6 +1,12 @@
+from django.contrib import messages
 from django.http import Http404
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 
+from accounts.web_helpers import get_region_or_404, require_approved_coach
+from contacts.models import AuditLog
+from organizations.models import Team
+from tryouts.forms import TryoutEventForm
 from tryouts.models import TryoutEvent
 
 
@@ -79,3 +85,115 @@ def tryout_detail(request, tryout_id: int):
         "page_subtitle": "Tryout details and registration.",
     }
     return render(request, "tryouts/detail.html", context)
+
+
+def _coach_teams_queryset(user, region):
+    return Team.objects.filter(
+        coach_memberships__user=user,
+        coach_memberships__is_active=True,
+        region=region,
+    ).distinct()
+
+
+def _log_tryout_audit(actor, action, tryout, region):
+    AuditLog.objects.create(
+        actor=actor,
+        action=action,
+        target_type=tryout.__class__.__name__,
+        target_id=tryout.id,
+        region=region,
+    )
+
+
+@require_approved_coach
+def coach_tryout_list(request):
+    region = get_region_or_404(request)
+    teams = _coach_teams_queryset(request.user, region)
+    tryouts = TryoutEvent.objects.filter(
+        region=region,
+        team__in=teams,
+        is_active=True,
+    ).order_by("start_date", "name")
+    context = {
+        "tryouts": tryouts,
+        "page_title": "My Tryouts",
+        "page_subtitle": "Manage tryouts for your teams.",
+    }
+    return render(request, "coaches/tryouts.html", context)
+
+
+@require_approved_coach
+def coach_tryout_create(request):
+    region = get_region_or_404(request)
+    teams = _coach_teams_queryset(request.user, region)
+    if not teams.exists():
+        raise Http404
+
+    if request.method == "POST":
+        form = TryoutEventForm(request.POST, team_queryset=teams)
+        if form.is_valid():
+            tryout = form.save(commit=False)
+            tryout.region = region
+            tryout.association = tryout.team.association
+            tryout.is_active = True
+            tryout.save()
+            _log_tryout_audit(request.user, "TRYOUT_CREATED", tryout, region)
+            messages.success(request, "Tryout created.")
+            return redirect("coach_tryout_list")
+    else:
+        form = TryoutEventForm(team_queryset=teams)
+
+    context = {
+        "form": form,
+        "page_title": "New Tryout",
+        "page_subtitle": "Create a tryout for one of your teams.",
+    }
+    return render(request, "coaches/tryout_form.html", context)
+
+
+@require_approved_coach
+def coach_tryout_edit(request, tryout_id: int):
+    region = get_region_or_404(request)
+    teams = _coach_teams_queryset(request.user, region)
+    tryout = get_object_or_404(
+        TryoutEvent.objects.filter(region=region, team__in=teams, is_active=True),
+        pk=tryout_id,
+    )
+
+    if request.method == "POST":
+        form = TryoutEventForm(request.POST, instance=tryout, team_queryset=teams)
+        if form.is_valid():
+            tryout = form.save(commit=False)
+            tryout.region = region
+            tryout.association = tryout.team.association
+            tryout.save()
+            _log_tryout_audit(request.user, "TRYOUT_UPDATED", tryout, region)
+            messages.success(request, "Tryout updated.")
+            return redirect("coach_tryout_list")
+    else:
+        form = TryoutEventForm(instance=tryout, team_queryset=teams)
+
+    context = {
+        "form": form,
+        "tryout": tryout,
+        "page_title": "Edit Tryout",
+        "page_subtitle": "Update your tryout details.",
+    }
+    return render(request, "coaches/tryout_form.html", context)
+
+
+@require_approved_coach
+def coach_tryout_cancel(request, tryout_id: int):
+    if request.method != "POST":
+        raise Http404
+    region = get_region_or_404(request)
+    teams = _coach_teams_queryset(request.user, region)
+    tryout = get_object_or_404(
+        TryoutEvent.objects.filter(region=region, team__in=teams, is_active=True),
+        pk=tryout_id,
+    )
+    tryout.is_active = False
+    tryout.save(update_fields=["is_active"])
+    _log_tryout_audit(request.user, "TRYOUT_CANCELED", tryout, region)
+    messages.success(request, "Tryout canceled.")
+    return redirect(reverse("coach_tryout_list"))

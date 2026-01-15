@@ -563,7 +563,7 @@ def coach_requests(request):
     requests_qs = ContactRequest.objects.filter(
         requested_by=request.user,
         region=region,
-    ).select_related("player", "requesting_team")
+    ).select_related("player", "player__profile", "requesting_team")
 
     context = {
         "requests": requests_qs,
