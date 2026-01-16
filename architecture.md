@@ -197,6 +197,7 @@ Verification indicates authenticity only.
 - Association info pages with public contact details
 - Association logos via URL (recommended square, 200–800px)
 - Regional homepage association dropdown
+- Regional homepage hero banner image
 
 ### 9.2 APIs for Mobile
 - Add DRF endpoints for:

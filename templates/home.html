@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}BC Baseball Transfer Portal{% endblock %}
 
@@ -7,6 +8,14 @@
 {% block content %}
   <section class="hero card shadow-sm border-0">
     <div class="card-body p-4 p-md-5">
+      <div class="mb-4">
+          <img
+          src="{% static 'img/bc-hero.png' %}"
+          alt="BC Baseball Transfer Portal"
+          class="img-fluid rounded-4 w-100"
+          style="max-height: 420px; object-fit: cover; object-position: center top;"
+        >
+      </div>
       <div class="row align-items-center g-4">
         <div class="col-lg-7">
           <span class="badge text-bg-light border mb-3">{{ region.name }}</span>

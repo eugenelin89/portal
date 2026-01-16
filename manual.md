@@ -80,6 +80,7 @@ http://bc.localhost:8000/
 
 You can access tryouts directly from the hero CTA.
 Use the association dropdown to jump to an association info page.
+The hero banner uses a static image (`static/img/bc-hero.png`).
 
 ### 4.2 Tryouts list
 

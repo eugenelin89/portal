@@ -856,7 +856,20 @@ else
   exit 1
 fi
 
-print_step 59 "Docs Alignment" "Prompt #17"
+print_step 59 "Homepage Hero Banner" "Prompt #16"
+expected="Hero banner image present"
+set +e
+curl -s http://bc.localhost:8000/ | grep -q "static/img/bc-hero.png"
+hero_status=$?
+set -e
+if [[ $hero_status -eq 0 ]]; then
+  report "$expected" "found hero image" "yes"
+else
+  report "$expected" "missing hero image" "no"
+  exit 1
+fi
+
+print_step 60 "Docs Alignment" "Prompt #17"
 check_command_success "docs reflect implementation" \
   python - <<'PY'
 import pathlib

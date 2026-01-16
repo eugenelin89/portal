@@ -1944,6 +1944,21 @@ Expected:
 
 ---
 
+### 92. Homepage Hero Banner
+
+Visit:
+
+```
+http://bc.localhost:8000/
+```
+
+Expected:
+
+* Hero banner image renders
+* Image source is `static/img/bc-hero.png`
+
+---
+
 ### Exit Gate — Prompt #16
 
 You may proceed only if:
@@ -1955,6 +1970,7 @@ You may proceed only if:
 * Tryout audit logs are recorded
 * Association info pages render correctly
 * Homepage association dropdown is visible
+* Homepage hero banner is visible
 * Changes are committed
 
 ---
@@ -1965,7 +1981,7 @@ These checks verify that documentation matches implemented MVP behavior.
 
 ---
 
-### 92. Docs Consistency Review
+### 93. Docs Consistency Review
 
 Confirm that docs no longer claim unimplemented features:
 

@@ -36,6 +36,7 @@ Each task includes:
 - Nav works on mobile width
 - No broken styling
 - Homepage includes association dropdown for the current region
+- Homepage includes a hero banner image
 
 ---
 
