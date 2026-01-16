@@ -2,8 +2,6 @@
 from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
-from django.views.generic import TemplateView
-
 from accounts import views as account_views
 from organizations import web_views as organization_views
 from tryouts import web_views as tryout_views
@@ -11,7 +9,7 @@ from tryouts import web_views as tryout_views
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/v1/", include("api.urls")),
-    path("", TemplateView.as_view(template_name="home.html"), name="home"),
+    path("", organization_views.region_home, name="home"),
     path("tryouts/", tryout_views.tryout_list, name="tryout_list"),
     path("tryouts/<int:tryout_id>/", tryout_views.tryout_detail, name="tryout_detail"),
     path(

@@ -79,6 +79,7 @@ http://bc.localhost:8000/
 ```
 
 You can access tryouts directly from the hero CTA.
+Use the association dropdown to jump to an association info page.
 
 ### 4.2 Tryouts list
 

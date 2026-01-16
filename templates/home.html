@@ -9,12 +9,24 @@
     <div class="card-body p-4 p-md-5">
       <div class="row align-items-center g-4">
         <div class="col-lg-7">
-          <span class="badge text-bg-light border mb-3">British Columbia</span>
+          <span class="badge text-bg-light border mb-3">{{ region.name }}</span>
           <h1 class="display-6 fw-semibold mb-3">Privacy-first transfer portal for BC baseball tryouts and recruiting.</h1>
           <p class="lead text-muted mb-4">Discover open tryouts, connect with programs, and keep your family details protected.</p>
           <div class="d-flex flex-column flex-sm-row gap-2">
             <a class="btn btn-primary btn-lg" href="{% url 'tryout_list' %}">Browse Tryouts</a>
             <a class="btn btn-outline-secondary btn-lg" href="{% url 'login' %}">Sign in</a>
+          </div>
+          <div class="mt-4">
+            <label class="form-label" for="association-select">Explore associations</label>
+            <div class="d-flex flex-column flex-sm-row gap-2">
+              <select class="form-select" id="association-select">
+                <option value="">Select an association</option>
+                {% for association in associations %}
+                  <option value="{% url 'association_detail' association.id %}">{{ association.name }}</option>
+                {% endfor %}
+              </select>
+              <button class="btn btn-outline-primary" type="button" id="association-go" disabled>View info</button>
+            </div>
           </div>
         </div>
         <div class="col-lg-5">
@@ -39,4 +51,24 @@
       </div>
     </div>
   </section>
+{% endblock %}
+
+{% block extra_js %}
+  <script>
+    const associationSelect = document.getElementById("association-select");
+    const associationGo = document.getElementById("association-go");
+
+    if (associationSelect && associationGo) {
+      const updateState = () => {
+        associationGo.disabled = !associationSelect.value;
+      };
+      associationSelect.addEventListener("change", updateState);
+      associationGo.addEventListener("click", () => {
+        if (associationSelect.value) {
+          window.location.href = associationSelect.value;
+        }
+      });
+      updateState();
+    }
+  </script>
 {% endblock %}

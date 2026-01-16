@@ -47,6 +47,7 @@ If a feature does not directly support this loop, it is **out of scope for the M
   - Filter by age group, level, and date
   - View association info pages linked from tryouts
   - See association logos (URL) on info pages
+  - Use a homepage dropdown to jump to associations
 
 ---
 

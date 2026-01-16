@@ -843,7 +843,20 @@ assert response.status_code == 200, response.status_code
 print("ok")
 PY
 
-print_step 58 "Docs Alignment" "Prompt #17"
+print_step 58 "Homepage Association Dropdown" "Prompt #16"
+expected="Association dropdown contains regional associations"
+set +e
+curl -s http://bc.localhost:8000/ | grep -q "Sanity Assoc BC"
+dropdown_status=$?
+set -e
+if [[ $dropdown_status -eq 0 ]]; then
+  report "$expected" "found association option" "yes"
+else
+  report "$expected" "missing association option" "no"
+  exit 1
+fi
+
+print_step 59 "Docs Alignment" "Prompt #17"
 check_command_success "docs reflect implementation" \
   python - <<'PY'
 import pathlib

@@ -196,6 +196,7 @@ Verification indicates authenticity only.
 - Phone-first flows: browse tryouts, toggle Open, handle requests
 - Association info pages with public contact details
 - Association logos via URL (recommended square, 200–800px)
+- Regional homepage association dropdown
 
 ### 9.2 APIs for Mobile
 - Add DRF endpoints for:

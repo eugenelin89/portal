@@ -1929,6 +1929,21 @@ Expected:
 
 ---
 
+### 91. Homepage Association Dropdown
+
+Visit:
+
+```
+http://bc.localhost:8000/
+```
+
+Expected:
+
+* Association dropdown is visible
+* Dropdown includes associations from the current region
+
+---
+
 ### Exit Gate — Prompt #16
 
 You may proceed only if:
@@ -1939,6 +1954,7 @@ You may proceed only if:
 * Contact details are only visible after approval
 * Tryout audit logs are recorded
 * Association info pages render correctly
+* Homepage association dropdown is visible
 * Changes are committed
 
 ---
@@ -1949,7 +1965,7 @@ These checks verify that documentation matches implemented MVP behavior.
 
 ---
 
-### 91. Docs Consistency Review
+### 92. Docs Consistency Review
 
 Confirm that docs no longer claim unimplemented features:
 

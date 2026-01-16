@@ -70,6 +70,7 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 - Each association has a public information page.
 - Admins can maintain association details (description, contact info, website).
 - Admins can set a square logo URL (recommended 200–800px).
+- Regional homepage includes a dropdown list of associations.
 
 ### 5.3 Player Profile
 - Name (or initials)

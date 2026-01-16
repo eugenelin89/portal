@@ -17,3 +17,13 @@ def association_detail(request, association_id: int):
         "page_subtitle": "Association information and contact details.",
     }
     return render(request, "organizations/detail.html", context)
+
+
+def region_home(request):
+    region = get_region_or_404(request)
+    associations = Association.objects.filter(region=region, is_active=True).order_by("name")
+    context = {
+        "associations": associations,
+        "region": region,
+    }
+    return render(request, "home.html", context)

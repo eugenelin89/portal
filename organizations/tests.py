@@ -77,6 +77,14 @@ class OrganizationModelTests(TestCase):
 
 
 class OrganizationWebTests(TestCase):
+    def test_homepage_lists_associations_for_region(self):
+        bc = Region.objects.get(code="bc")
+        Association.objects.create(region=bc, name="Homepage Assoc", is_active=True)
+
+        response = self.client.get("/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Homepage Assoc", response.content.decode("utf-8"))
+
     def test_association_detail_region_scoped(self):
         bc = Region.objects.get(code="bc")
         on = Region.objects.create(code="on", name="Ontario", is_active=True)
