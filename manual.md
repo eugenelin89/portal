@@ -107,7 +107,8 @@ Click a tryout card to view details and registration.
 
 ### 4.4 Association info
 
-Association pages include public details and contact information.
+Association pages include public details, contact information, and upcoming tryouts from the same association.
+Use the "Search Tryouts" button to return to the tryouts browse page.
 Links appear on tryout list/detail and team pages.
 Logos appear when a logo URL is provided.
 

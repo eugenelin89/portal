@@ -230,6 +230,7 @@ print(f"export SANITY_PLAYER_USERNAME={PLAYER_USERNAME}")
 print(f"export SANITY_PLAYER_PASSWORD={PLAYER_PASSWORD}")
 print(f"export SANITY_COACH_USERNAME={COACH_USERNAME}")
 print(f"export SANITY_COACH_PASSWORD={COACH_PASSWORD}")
+print(f"export SANITY_ASSOC_ID={assoc_bc.id}")
 print(f"export SANITY_PLAYER_ID={player.id}")
 print(f"export SANITY_TEAM_ID={team_bc.id}")
 print(f"export SANITY_TRYOUT_ID={tryout.id}")
@@ -843,7 +844,23 @@ assert response.status_code == 200, response.status_code
 print("ok")
 PY
 
-print_step 58 "Homepage Association Dropdown" "Prompt #16"
+print_step 58 "Association Tryouts List + CTA" "Prompt #16"
+expected="association page lists tryouts and Search Tryouts CTA"
+assoc_page=$(curl -s "http://bc.localhost:8000/associations/${SANITY_ASSOC_ID}/")
+set +e
+echo "$assoc_page" | grep -q "Sanity Tryout"
+tryout_status=$?
+echo "$assoc_page" | grep -q "Search Tryouts"
+cta_status=$?
+set -e
+if [[ $tryout_status -eq 0 && $cta_status -eq 0 ]]; then
+  report "$expected" "tryout+cta present" "yes"
+else
+  report "$expected" "tryout_status=$tryout_status, cta_status=$cta_status" "no"
+  exit 1
+fi
+
+print_step 59 "Homepage Association Dropdown" "Prompt #16"
 expected="Association dropdown contains regional associations"
 set +e
 curl -s http://bc.localhost:8000/ | grep -q "Sanity Assoc BC"
@@ -856,7 +873,7 @@ else
   exit 1
 fi
 
-print_step 59 "Homepage Hero Banner" "Prompt #16"
+print_step 60 "Homepage Hero Banner" "Prompt #16"
 expected="Hero banner image present"
 set +e
 curl -s http://bc.localhost:8000/ | grep -q "static/img/bc-hero.png"
@@ -869,7 +886,7 @@ else
   exit 1
 fi
 
-print_step 60 "Docs Alignment" "Prompt #17"
+print_step 61 "Docs Alignment" "Prompt #17"
 check_command_success "docs reflect implementation" \
   python - <<'PY'
 import pathlib

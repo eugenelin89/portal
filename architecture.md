@@ -194,7 +194,7 @@ Verification indicates authenticity only.
 ### 9.1 MVP Web
 - Responsive templates (Bootstrap/Tailwind)
 - Phone-first flows: browse tryouts, toggle Open, handle requests
-- Association info pages with public contact details
+- Association info pages with public contact details and listed tryouts
 - Association logos via URL (recommended square, 200–800px)
 - Regional homepage association dropdown
 - Regional homepage hero banner image

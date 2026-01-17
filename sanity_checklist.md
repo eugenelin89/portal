@@ -1925,6 +1925,8 @@ Expected:
 * Page renders for associations in the current region
 * Cross-region associations return 404
 * Links appear from tryouts and coach team views
+* Upcoming tryouts for the association are listed (if any)
+* "Search Tryouts" button links back to the tryouts browse page
 * Logo displays when a URL is set (recommended square, 200–800px)
 
 ---

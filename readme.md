@@ -61,7 +61,7 @@ Social features may be added later with strict privacy controls.
 - Role-based authentication and access control
 - Coach signup with email verification + domain-based auto-approval
 - Tryout listings with filtering
-- Association info pages with contact details
+- Association info pages with contact details and listed tryouts
 - Association logos via URL (recommended square, 200–800px)
 - Regional homepage association dropdown
 - Regional homepage hero banner image

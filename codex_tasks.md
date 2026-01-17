@@ -180,7 +180,8 @@ Each task includes:
 **Acceptance Checks:**
 - Association page renders in the current region
 - Links appear from tryout list/detail and coach teams
- - Logo displays when URL is set (recommended square, 200–800px)
+- Association page lists upcoming tryouts (if any)
+- Logo displays when URL is set (recommended square, 200–800px)
 
 ---
 

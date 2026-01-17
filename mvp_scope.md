@@ -45,7 +45,7 @@ If a feature does not directly support this loop, it is **out of scope for the M
 - Players/families can:
   - Browse tryouts
   - Filter by age group, level, and date
-  - View association info pages linked from tryouts
+  - View association info pages linked from tryouts, including upcoming tryouts
   - See association logos (URL) on info pages
   - Use a homepage dropdown to jump to associations
   - See a regional hero banner on the homepage
