@@ -60,6 +60,7 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 - Accounts are role-based.
 - Coaches require admin approval.
 - Coach signup requires email verification; domain-matched emails can be auto-approved.
+- Email verification uses SMTP settings provided via environment variables (e.g., `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`).
 
 ### 5.2 Tryout Listings
 - Teams can post tryout dates, locations, and registration links.

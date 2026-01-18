@@ -209,6 +209,7 @@ Verification indicates authenticity only.
 ### 9.3 Notifications
 - Email in MVP
 - Push notifications in mobile app (future)
+- Email delivery uses SMTP via environment variables (console backend recommended for local dev)
 
 ---
 

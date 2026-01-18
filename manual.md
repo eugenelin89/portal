@@ -55,6 +55,27 @@ Open:
 
 If `bc.localhost` does not resolve, add it to your hosts file as described in `setup.md`.
 
+### 2.4 Email configuration (local)
+
+Signup verification emails use the configured email backend.
+
+For local development, you can use the console backend to print verification links:
+```bash
+export EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+export DEFAULT_FROM_EMAIL=no-reply@transferportal.local
+```
+
+For SMTP (Gmail example), set:
+```bash
+export EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+export EMAIL_HOST=smtp.gmail.com
+export EMAIL_PORT=587
+export EMAIL_USE_TLS=True
+export EMAIL_HOST_USER=your_account@gmail.com
+export EMAIL_HOST_PASSWORD=your_app_password
+export DEFAULT_FROM_EMAIL=your_account@gmail.com
+```
+
 ---
 
 ## 3) Navigation Overview
@@ -125,7 +146,7 @@ http://bc.localhost:8000/signup/player/
 
 Expected:
 - Account is created inactive.
-- A verification email link is sent (printed to console in development).
+- A verification email link is sent via the configured email backend.
 - You must verify before logging in.
 
 Log in as a player:
@@ -209,7 +230,7 @@ http://bc.localhost:8000/signup/coach/
 
 Expected:
 - Account is created inactive.
-- A verification email link is sent (printed to console in development).
+- A verification email link is sent via the configured email backend.
 - If the email domain matches the association’s official domain, approval is automatic.
 - Otherwise, an admin must approve the coach before coach pages are accessible.
 

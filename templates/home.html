@@ -10,17 +10,16 @@
     <div class="card-body p-4 p-md-5">
       <div class="mb-4">
           <img
-          src="{% static 'img/bc-hero.png' %}"
-          alt="BC Baseball Transfer Portal"
-          class="img-fluid rounded-4 w-100"
-          style="max-height: 420px; object-fit: cover; object-position: center top;"
-        >
+            src="{% static 'img/bc-hero.png' %}"
+            alt="BC Baseball Transfer Portal"
+            class="hero-image img-fluid rounded-4 w-100"
+          >
       </div>
       <div class="row align-items-center g-4">
         <div class="col-lg-7">
           <span class="badge text-bg-light border mb-3">{{ region.name }}</span>
           <h1 class="display-6 fw-semibold mb-3">Privacy-first transfer portal for BC baseball tryouts and recruiting.</h1>
-          <p class="lead text-muted mb-4">Discover open tryouts, connect with programs, and keep your family details protected.</p>
+          <p class="lead text-muted mb-4">Discover open tryouts, connect with programs, and keep your family details protected. Get discovered by teams and coaches while uncovering new playing opportunities.</p>
           <div class="d-flex flex-column flex-sm-row gap-2">
             <a class="btn btn-primary btn-lg" href="{% url 'tryout_list' %}">Browse Tryouts</a>
             <a class="btn btn-outline-secondary btn-lg" href="{% url 'login' %}">Sign in</a>

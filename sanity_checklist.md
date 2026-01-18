@@ -40,6 +40,34 @@ These checks verify that the core Django + DRF + JWT foundation is correct.
 
 ---
 
+### 1b. Email Configuration (SMTP or Console)
+
+Choose one:
+
+Console backend (local dev):
+```bash
+export EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+export DEFAULT_FROM_EMAIL=no-reply@transferportal.local
+```
+
+SMTP (Gmail example):
+```bash
+export EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+export EMAIL_HOST=smtp.gmail.com
+export EMAIL_PORT=587
+export EMAIL_USE_TLS=True
+export EMAIL_HOST_USER=your_account@gmail.com
+export EMAIL_HOST_PASSWORD=your_app_password
+export DEFAULT_FROM_EMAIL=your_account@gmail.com
+```
+
+Expected:
+* SMTP credentials are set via environment variables (no secrets in git)
+* For Gmail, an app password is used
+* Outbound SMTP (port 587) is allowed in production
+
+---
+
 ### 2. Install & Migrate
 
 ```bash
@@ -1695,7 +1723,7 @@ Submit the form with a valid association and email.
 Expected:
 
 * User is created with `is_active = False`
-* Verification email is sent
+* Verification email is sent via the configured backend (console output or SMTP inbox)
 * User cannot log in before clicking the verification link
 
 ---
@@ -1778,7 +1806,7 @@ Submit the signup form with a unique email.
 Expected:
 
 * User created with `is_active = False`
-* Verification email sent
+* Verification email sent via the configured backend (console output or SMTP inbox)
 * User cannot log in before verification
 
 ---

@@ -116,6 +116,28 @@ else
   exit 1
 fi
 
+print_step 1b "Email Configuration" "Prompt #1"
+check_command_success "EMAIL settings load from environment variables" \
+  bash -c 'EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend \
+    EMAIL_HOST=smtp.gmail.com \
+    EMAIL_PORT=587 \
+    EMAIL_USE_TLS=True \
+    EMAIL_HOST_USER=sanity@example.com \
+    EMAIL_HOST_PASSWORD=sanity-pass \
+    DEFAULT_FROM_EMAIL=sanity@example.com \
+    python - <<'"'"'PY'"'"'
+from transferportal import settings
+
+assert settings.EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend"
+assert settings.EMAIL_HOST == "smtp.gmail.com"
+assert settings.EMAIL_PORT == 587
+assert settings.EMAIL_USE_TLS is True
+assert settings.EMAIL_HOST_USER == "sanity@example.com"
+assert settings.EMAIL_HOST_PASSWORD == "sanity-pass"
+assert settings.DEFAULT_FROM_EMAIL == "sanity@example.com"
+print("ok")
+PY'
+
 print_step 2 "Install & Migrate" "Prompt #1"
 check_command_success "Dependencies installed and migrations applied" \
   bash -c "python -m pip install -r requirements.txt && python manage.py migrate"

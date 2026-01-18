@@ -104,6 +104,30 @@ For full details, see **ARCHITECTURE.md**.
 
 ---
 
+## ✉️ Email Configuration
+Signup verification emails are sent via SMTP using environment variables.
+
+Local development (console backend):
+```env
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+DEFAULT_FROM_EMAIL=no-reply@transferportal.local
+```
+
+SMTP (Gmail example):
+```env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your_account@gmail.com
+EMAIL_HOST_PASSWORD=your_app_password
+DEFAULT_FROM_EMAIL=your_account@gmail.com
+```
+
+For production, store credentials securely and ensure outbound SMTP is allowed.
+
+---
+
 ## 📈 Monetization (High-Level)
 - Free for players and parents
 - Funded by leagues and associations

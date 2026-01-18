@@ -43,6 +43,12 @@ body {
   border: 1px solid var(--portal-border);
 }
 
+.hero-image {
+  height: auto;
+  object-fit: contain;
+  object-position: center;
+}
+
 .icon-dot {
   display: inline-block;
   width: 10px;

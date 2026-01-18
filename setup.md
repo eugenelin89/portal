@@ -57,7 +57,28 @@ SECRET_KEY=dev-secret-key
 ALLOWED_HOSTS=.localhost,.transferportal.ca
 ```
 
-> Note: In production, `SECRET_KEY` and other secrets must be stored securely.
+Optional email configuration (choose one):
+
+Console backend (local dev):
+```env
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
+DEFAULT_FROM_EMAIL=no-reply@transferportal.local
+```
+
+SMTP (Gmail example):
+```env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=your_account@gmail.com
+EMAIL_HOST_PASSWORD=your_app_password
+DEFAULT_FROM_EMAIL=your_account@gmail.com
+```
+
+> Note: In production, store `SECRET_KEY`, SMTP credentials, and other secrets securely
+> (environment variables or a secret manager). For Gmail, use an app password and
+> ensure outbound SMTP (port 587) is allowed.
 
 ---
 
