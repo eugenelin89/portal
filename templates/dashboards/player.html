@@ -10,7 +10,12 @@
       <div class="d-flex flex-column flex-md-row gap-2 flex-wrap">
         <a class="btn btn-primary" href="{% url 'player_profile' %}">Edit profile</a>
         <a class="btn btn-outline-primary" href="{% url 'player_availability' %}">Availability</a>
-        <a class="btn btn-outline-secondary" href="{% url 'player_requests' %}">Contact requests</a>
+        <a class="btn btn-outline-secondary" href="{% url 'player_requests' %}">
+          Contact requests
+          {% if pending_requests %}
+            <span class="badge text-bg-danger ms-2">{{ pending_requests }}</span>
+          {% endif %}
+        </a>
         <a class="btn btn-outline-secondary" href="{% url 'tryout_list' %}">Browse tryouts</a>
       </div>
     </div>

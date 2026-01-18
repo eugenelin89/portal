@@ -72,7 +72,14 @@ def _verify_player_token(token: str, *, max_age_seconds: int):
 
 @require_player
 def player_dashboard(request):
-    return render(request, "dashboards/player.html")
+    region = get_region_or_404(request)
+    pending_requests = ContactRequest.objects.filter(
+        player=request.user,
+        region=region,
+        status=ContactRequest.Status.PENDING,
+    ).count()
+    context = {"pending_requests": pending_requests}
+    return render(request, "dashboards/player.html", context)
 
 
 @require_approved_coach
@@ -556,21 +563,36 @@ def coach_open_player_detail(request, player_id):
     if not team_ids:
         raise Http404
 
-    availability = get_object_or_404(
-        PlayerAvailability.objects.select_related("player").filter(
+    availability = (
+        PlayerAvailability.objects.select_related("player")
+        .filter(
             region=region,
             player_id=player_id,
             is_open=True,
             is_committed=False,
-        ),
+        )
+        .first()
     )
-    if availability.expires_at and availability.expires_at <= timezone.now():
-        raise Http404
-    if not availability.allowed_teams.filter(id__in=team_ids).exists():
+    if availability and availability.expires_at and availability.expires_at <= timezone.now():
+        availability = None
+
+    has_open_access = False
+    if availability and availability.allowed_teams.filter(id__in=team_ids).exists():
+        has_open_access = True
+
+    approved_request = ContactRequest.objects.filter(
+        player_id=player_id,
+        requested_by=request.user,
+        region=region,
+        status=ContactRequest.Status.APPROVED,
+    ).exists()
+
+    if not has_open_access and not approved_request:
         raise Http404
 
+    user = availability.player if availability else get_object_or_404(get_user_model(), id=player_id)
     profile = (
-        PlayerProfile.objects.filter(user=availability.player)
+        PlayerProfile.objects.filter(user=user)
         .select_related("current_association")
         .first()
     )

@@ -4,6 +4,7 @@ from rest_framework import serializers
 
 from availability.models import PlayerAvailability
 from contacts.models import ContactRequest
+from contacts.utils import send_contact_request_email
 from organizations.models import Team, TeamCoach
 from regions.utils import get_request_region
 
@@ -101,7 +102,7 @@ class ContactRequestCreateSerializer(serializers.ModelSerializer):
         player = validated_data.pop("_player")
         region = validated_data.pop("_region")
         try:
-            return ContactRequest.objects.create(
+            contact_request = ContactRequest.objects.create(
                 player=player,
                 requesting_team=team,
                 requested_by=request.user,
@@ -109,6 +110,8 @@ class ContactRequestCreateSerializer(serializers.ModelSerializer):
                 status=ContactRequest.Status.PENDING,
                 message=validated_data.get("message", ""),
             )
+            send_contact_request_email(request, contact_request)
+            return contact_request
         except IntegrityError:
             raise serializers.ValidationError("A pending request already exists for this player and team.")
 

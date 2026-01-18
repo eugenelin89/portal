@@ -1,7 +1,8 @@
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.core import mail
+from django.test import TestCase, override_settings
 from django.utils import timezone
 from rest_framework.test import APIClient
 
@@ -18,7 +19,11 @@ User = get_user_model()
 class ContactRequestApiTests(TestCase):
     def setUp(self):
         self.client = APIClient()
-        self.player = User.objects.create_user(username="player1", password="testpass")
+        self.player = User.objects.create_user(
+            username="player1",
+            password="testpass",
+            email="player1@example.com",
+        )
         self.player.profile.role = AccountProfile.Roles.PLAYER
         self.player.profile.save()
 
@@ -146,6 +151,22 @@ class ContactRequestApiTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(AuditLog.objects.filter(action="CONTACT_REQUEST_APPROVED", target_id=contact_id).exists())
+
+    @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
+    def test_contact_request_sends_email(self):
+        availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
+        availability.allowed_teams.add(self.team_bc)
+        self.client.force_authenticate(user=self.coach)
+
+        response = self.client.post(
+            "/api/v1/contact-requests/",
+            {"player_id": self.player.id, "requesting_team_id": self.team_bc.id, "message": "Hi"},
+            format="json",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("/player/requests/", mail.outbox[0].body)
 
     def test_open_players_endpoint_filters_expired(self):
         availability = PlayerAvailability.objects.create(

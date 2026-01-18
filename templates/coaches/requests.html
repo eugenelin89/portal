@@ -14,7 +14,14 @@
             <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
               <div>
                 <h2 class="h5 mb-1">{{ request_item.requesting_team.name }}</h2>
-                <p class="text-muted mb-2">Player: {{ request_item.player.username }}</p>
+                <p class="text-muted mb-2">
+                  Player:
+                  {% if request_item.status == "approved" %}
+                    <a href="{% url 'coach_open_player_detail' request_item.player.id %}">{{ request_item.player.username }}</a>
+                  {% else %}
+                    {{ request_item.player.username }}
+                  {% endif %}
+                </p>
                 {% if request_item.message %}
                   <p class="mb-0">{{ request_item.message }}</p>
                 {% endif %}

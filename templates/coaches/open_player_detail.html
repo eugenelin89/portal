@@ -31,19 +31,27 @@
             <div class="mt-3">
               <h3 class="h6 text-uppercase text-muted">Positions</h3>
               <div class="d-flex flex-wrap gap-2 mb-3">
-                {% for position in availability.positions %}
-                  {% include "partials/_badge.html" with label=position badge_class="text-bg-primary" %}
-                {% empty %}
+                {% if availability and availability.positions %}
+                  {% for position in availability.positions %}
+                    {% include "partials/_badge.html" with label=position badge_class="text-bg-primary" %}
+                  {% endfor %}
+                {% elif profile and profile.positions %}
+                  {% for position in profile.positions %}
+                    {% include "partials/_badge.html" with label=position badge_class="text-bg-primary" %}
+                  {% endfor %}
+                {% else %}
                   <span class="text-muted">Not specified</span>
-                {% endfor %}
+                {% endif %}
               </div>
               <h3 class="h6 text-uppercase text-muted">Levels</h3>
               <div class="d-flex flex-wrap gap-2 mb-3">
-                {% for level in availability.levels %}
-                  {% include "partials/_badge.html" with label=level badge_class="text-bg-secondary" %}
-                {% empty %}
+                {% if availability and availability.levels %}
+                  {% for level in availability.levels %}
+                    {% include "partials/_badge.html" with label=level badge_class="text-bg-secondary" %}
+                  {% endfor %}
+                {% else %}
                   <span class="text-muted">Not specified</span>
-                {% endfor %}
+                {% endif %}
               </div>
               <h3 class="h6 text-uppercase text-muted">Bats / Throws</h3>
               <p class="mb-3">
@@ -85,10 +93,14 @@
               {% else %}
                 <span class="text-muted">No links or bio provided</span>
               {% endif %}
-              {% if availability.expires_at %}
-                <p class="text-muted mb-0">Open until {{ availability.expires_at|date:"M j, Y, g:i a" }}</p>
+              {% if availability %}
+                {% if availability.expires_at %}
+                  <p class="text-muted mb-0">Open until {{ availability.expires_at|date:"M j, Y, g:i a" }}</p>
+                {% else %}
+                  <p class="text-muted mb-0">Open indefinitely</p>
+                {% endif %}
               {% else %}
-                <p class="text-muted mb-0">Open indefinitely</p>
+                <p class="text-muted mb-0">Availability not shared.</p>
               {% endif %}
             </div>
           {% endwith %}

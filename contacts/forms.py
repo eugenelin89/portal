@@ -3,6 +3,7 @@ from django.db import IntegrityError
 
 from availability.models import PlayerAvailability
 from contacts.models import ContactRequest
+from contacts.utils import send_contact_request_email
 from organizations.models import Team
 from regions.utils import get_request_region
 
@@ -82,7 +83,7 @@ class ContactRequestForm(forms.Form):
         team = self.cleaned_data["requesting_team"]
         message = self.cleaned_data.get("message", "")
         try:
-            return ContactRequest.objects.create(
+            contact_request = ContactRequest.objects.create(
                 player=availability.player,
                 requesting_team=team,
                 requested_by=requested_by,
@@ -90,6 +91,8 @@ class ContactRequestForm(forms.Form):
                 status=ContactRequest.Status.PENDING,
                 message=message,
             )
+            send_contact_request_email(self.request, contact_request)
+            return contact_request
         except IntegrityError:
             raise forms.ValidationError("A pending request already exists for this player and team.")
 
