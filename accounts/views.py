@@ -77,7 +77,28 @@ def player_dashboard(request):
 
 @require_approved_coach
 def coach_dashboard(request):
-    return render(request, "dashboards/coach.html")
+    region = get_region_or_404(request)
+    memberships = (
+        TeamCoach.objects.filter(
+            user=request.user,
+            is_active=True,
+            team__region=region,
+        )
+        .select_related("team", "team__association")
+        .order_by("team__association__name", "team__name")
+    )
+    association_map = {}
+    for membership in memberships:
+        association = membership.team.association
+        association_map.setdefault(association.id, association)
+    profile_association = getattr(request.user.profile, "association", None)
+    if profile_association and profile_association.region_id == region.id:
+        association_map.setdefault(profile_association.id, profile_association)
+    context = {
+        "associations": list(association_map.values()),
+        "teams": [membership.team for membership in memberships],
+    }
+    return render(request, "dashboards/coach.html", context)
 
 
 def coach_signup(request):
@@ -105,6 +126,7 @@ def coach_signup(request):
                 profile.role = AccountProfile.Roles.COACH
                 profile.is_coach_approved = domain_match
                 profile.phone_number = form.cleaned_data["phone_number"]
+                profile.association = association
                 profile.save()
 
                 token = _build_verification_token(user)
@@ -547,7 +569,11 @@ def coach_open_player_detail(request, player_id):
     if not availability.allowed_teams.filter(id__in=team_ids).exists():
         raise Http404
 
-    profile = PlayerProfile.objects.filter(user=availability.player).first()
+    profile = (
+        PlayerProfile.objects.filter(user=availability.player)
+        .select_related("current_association")
+        .first()
+    )
     context = {
         "availability": availability,
         "profile": profile,

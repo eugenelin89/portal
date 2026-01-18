@@ -1,6 +1,8 @@
 from django.conf import settings
 from django.db import models
 
+from organizations.models import Association
+
 
 class AccountProfile(models.Model):
     class Roles(models.TextChoices):
@@ -20,6 +22,13 @@ class AccountProfile(models.Model):
     )
     phone_number = models.CharField(max_length=30, blank=True)
     is_coach_approved = models.BooleanField(default=False)
+    association = models.ForeignKey(
+        Association,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="coaches",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -20,6 +20,9 @@
                 {% if profile and profile.birth_year %}
                   <p class="text-muted mb-2">Birth year {{ profile.birth_year }}</p>
                 {% endif %}
+                {% if profile and profile.current_association %}
+                  <p class="text-muted mb-0">Current association: {{ profile.current_association.name }}</p>
+                {% endif %}
               </div>
               <div>
                 <a class="btn btn-primary" href="{% url 'coach_request_new' %}?player_id={{ availability.player.id }}">Request contact</a>
@@ -42,6 +45,46 @@
                   <span class="text-muted">Not specified</span>
                 {% endfor %}
               </div>
+              <h3 class="h6 text-uppercase text-muted">Bats / Throws</h3>
+              <p class="mb-3">
+                {% if profile %}
+                  {% if profile.bats or profile.throws %}
+                    {{ profile.get_bats_display|default:"" }}{% if profile.bats and profile.throws %} / {% endif %}{{ profile.get_throws_display|default:"" }}
+                  {% else %}
+                    <span class="text-muted">Not specified</span>
+                  {% endif %}
+                {% else %}
+                  <span class="text-muted">Not specified</span>
+                {% endif %}
+              </p>
+              <h3 class="h6 text-uppercase text-muted">Links and Bio</h3>
+              {% if profile %}
+                <div class="mb-3">
+                  {% if profile.pbr_url %}
+                    <div><a href="{{ profile.pbr_url }}" target="_blank" rel="noopener">PBR profile</a></div>
+                  {% endif %}
+                  {% if profile.pg_url %}
+                    <div><a href="{{ profile.pg_url }}" target="_blank" rel="noopener">Perfect Game profile</a></div>
+                  {% endif %}
+                  {% if profile.youtube_url %}
+                    <div><a href="{{ profile.youtube_url }}" target="_blank" rel="noopener">YouTube highlights</a></div>
+                  {% endif %}
+                  {% if profile.instagram_handle %}
+                    <div>Instagram: {{ profile.instagram_handle }}</div>
+                  {% endif %}
+                  {% if profile.twitter_handle %}
+                    <div>Twitter: {{ profile.twitter_handle }}</div>
+                  {% endif %}
+                  {% if profile.bio %}
+                    <div class="mt-2">{{ profile.bio }}</div>
+                  {% endif %}
+                  {% if not profile.pbr_url and not profile.pg_url and not profile.youtube_url and not profile.instagram_handle and not profile.twitter_handle and not profile.bio %}
+                    <span class="text-muted">No links or bio provided</span>
+                  {% endif %}
+                </div>
+              {% else %}
+                <span class="text-muted">No links or bio provided</span>
+              {% endif %}
               {% if availability.expires_at %}
                 <p class="text-muted mb-0">Open until {{ availability.expires_at|date:"M j, Y, g:i a" }}</p>
               {% else %}
