@@ -59,6 +59,11 @@ urlpatterns = [
     path("signup/player/", account_views.player_signup, name="player_signup"),
     path("signup/player/verify/<str:token>/", account_views.player_verify, name="player_verify"),
     path(
+        "accounts/resend-verification/",
+        account_views.resend_verification,
+        name="resend_verification",
+    ),
+    path(
         "accounts/login/",
         auth_views.LoginView.as_view(template_name="registration/login.html"),
         name="login",

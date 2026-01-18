@@ -132,3 +132,13 @@ class PlayerContactForm(forms.Form):
             field = self.fields[field_name]
             if isinstance(field.widget, forms.TextInput):
                 field.widget.attrs.setdefault("class", "form-control")
+
+
+class ResendVerificationForm(forms.Form):
+    email = forms.EmailField()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        field = self.fields["email"]
+        if isinstance(field.widget, (forms.TextInput, forms.EmailInput)):
+            field.widget.attrs.setdefault("class", "form-control")

@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 
-from accounts.forms import CoachSignupForm, PlayerContactForm, PlayerSignupForm
+from accounts.forms import CoachSignupForm, PlayerContactForm, PlayerSignupForm, ResendVerificationForm
 from accounts.models import AccountProfile
 from accounts.web_helpers import get_region_or_404, require_approved_coach, require_player
 from availability.forms import PlayerAvailabilityForm
@@ -331,6 +331,64 @@ def player_verify(request, token):
     user.save(update_fields=["is_active"])
     login(request, user, backend=settings.AUTHENTICATION_BACKENDS[0])
     return redirect("dashboard")
+
+
+def resend_verification(request):
+    if request.method == "POST":
+        form = ResendVerificationForm(request.POST)
+        if form.is_valid():
+            email = form.cleaned_data["email"].strip().lower()
+            user_model = get_user_model()
+            user = user_model.objects.filter(
+                Q(email__iexact=email) | Q(username__iexact=email)
+            ).select_related("profile").first()
+            if not user:
+                messages.info(
+                    request,
+                    "If an account exists for that email, a verification link has been sent.",
+                )
+                return redirect("login")
+            if user.is_active:
+                messages.info(request, "Your account is already verified. Please sign in.")
+                return redirect("login")
+
+            if user.profile.role == AccountProfile.Roles.COACH:
+                token = _build_verification_token(user)
+                verify_url = request.build_absolute_uri(
+                    reverse("coach_verify", args=[token])
+                )
+                subject = "Verify your coach account"
+            else:
+                token = _build_player_verification_token(user)
+                verify_url = request.build_absolute_uri(
+                    reverse("player_verify", args=[token])
+                )
+                subject = "Verify your player account"
+
+            send_mail(
+                subject,
+                (
+                    "Here is your email verification link:\n\n"
+                    f"{verify_url}\n\n"
+                    "If you did not request this email, you can ignore it."
+                ),
+                settings.DEFAULT_FROM_EMAIL,
+                [user.email],
+            )
+            messages.success(
+                request,
+                "Verification link sent. Please check your email.",
+            )
+            return redirect("login")
+    else:
+        form = ResendVerificationForm()
+
+    context = {
+        "form": form,
+        "page_title": "Resend verification",
+        "page_subtitle": "Enter your email to receive a new verification link.",
+    }
+    return render(request, "accounts/resend_verification.html", context)
 
 
 @require_player
