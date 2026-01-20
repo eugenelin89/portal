@@ -88,7 +88,7 @@ For MVP, **choose ONE visibility mechanism**:
 ---
 
 ### 2.6 Contact Request Workflow
-- Permitted teams can:
+- Permitted associations (and teams, if specified) can:
   - Send a contact request to an Open player
 - Player can:
   - Accept the request (contact details shared)

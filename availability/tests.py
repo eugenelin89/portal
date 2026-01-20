@@ -77,6 +77,25 @@ class AvailabilityApiTests(TestCase):
         self.assertEqual(len(response.data), 1)
         self.assertEqual(response.data[0]["player_id"], self.player.id)
 
+    def test_coach_with_profile_association_can_search_open_players(self):
+        coach = User.objects.create_user(username="coach2", password="testpass")
+        coach.profile.role = AccountProfile.Roles.COACH
+        coach.profile.is_coach_approved = True
+        coach.profile.association = self.assoc_bc
+        coach.profile.save()
+
+        availability = PlayerAvailability.objects.create(
+            player=self.player,
+            region=self.bc,
+            is_open=True,
+        )
+        availability.allowed_associations.add(self.assoc_bc)
+
+        self.client.force_authenticate(user=coach)
+        response = self.client.get("/api/v1/availability/search/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+
     def test_expired_availability_excluded(self):
         self.coach.profile.is_coach_approved = True
         self.coach.profile.save()

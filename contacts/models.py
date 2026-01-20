@@ -1,7 +1,7 @@
 from django.conf import settings
 from django.db import models
 
-from organizations.models import Team
+from organizations.models import Association, Team
 from regions.models import Region
 
 
@@ -20,6 +20,15 @@ class ContactRequest(models.Model):
         Team,
         on_delete=models.PROTECT,
         related_name="contact_requests",
+        null=True,
+        blank=True,
+    )
+    requesting_association = models.ForeignKey(
+        Association,
+        on_delete=models.PROTECT,
+        related_name="contact_requests",
+        null=True,
+        blank=True,
     )
     requested_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -39,11 +48,22 @@ class ContactRequest(models.Model):
                 fields=["player", "requesting_team"],
                 condition=models.Q(status="pending"),
                 name="unique_pending_request_per_player_team",
-            )
+            ),
+            models.UniqueConstraint(
+                fields=["player", "requesting_association"],
+                condition=models.Q(status="pending", requesting_association__isnull=False),
+                name="unique_pending_request_per_player_association",
+            ),
         ]
 
     def __str__(self) -> str:
-        return f"Request {self.requesting_team.name} -> {self.player.username} ({self.status})"
+        if self.requesting_team:
+            label = self.requesting_team.name
+        elif self.requesting_association:
+            label = self.requesting_association.name
+        else:
+            label = "Association"
+        return f"Request {label} -> {self.player.username} ({self.status})"
 
 
 class AuditLog(models.Model):

@@ -607,7 +607,8 @@ Create a new app: `contacts`.
 ContactRequest
 - id
 - player (FK to User / AccountProfile)
-- requesting_team (FK to Team)
+- requesting_team (FK to Team, optional)
+- requesting_association (FK to Association, optional)
 - requested_by (FK to User — coach)
 - region (FK to Region)
 - status (PENDING, APPROVED, DECLINED)
@@ -618,7 +619,7 @@ ContactRequest
 Rules:
 - Only ONE active PENDING request per (player, team).
 - ContactRequest.region must match request.region.
-- Coach must be approved and associated with requesting_team.
+- Coach must be approved and associated with requesting_team (if provided) or their profile association.
 - Player must currently be Open (availability.is_open == True).
 
 AuditLog
@@ -718,7 +719,7 @@ Do NOT implement:
 
 Scope requirements:
 - Region-aware everywhere (request.region / request.region_code)
-- Coaches must be approved and linked to the requesting team (use existing TeamCoach if present)
+- Coaches must be approved and linked to the requesting team (if provided) or their profile association
 - Player must be Open to receive a request (use availability app)
 - Prevent duplicate pending requests per (player, team)
 - Provide endpoints:
@@ -752,6 +753,7 @@ After implementing, summarize changes and provide curl examples.
 - `python manage.py test`
 - Coach creates a request:
 - `curl -X POST http://localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'`
+- (Association-only) `curl -X POST http://localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"player_id":12,"message":"We would like to connect."}'`
 - Player responds:
 - `curl -X POST http://localhost:8000/api/v1/contact-requests/42/respond/ -H "Authorization: Bearer <player_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"status":"approved"}'`
 
@@ -961,6 +963,7 @@ Open players search (coach/admin):
 
 Contact request blocked:
 - `curl -X POST http://localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'`
+- (Association-only) `curl -X POST http://localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -H "Host: bc.localhost:8000" -d '{"player_id":12,"message":"We would like to connect."}'`
 
 
 ---
@@ -1070,6 +1073,7 @@ Deliverables:
 
 Demo:
 - `curl -X POST http://bc.localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -d '{"player_id":<player_id>,"requesting_team_id":<team_id>,"message":"We would like to connect."}'`
+- (Association-only) `curl -X POST http://bc.localhost:8000/api/v1/contact-requests/ -H "Authorization: Bearer <coach_access_token>" -H "Content-Type: application/json" -d '{"player_id":<player_id>,"message":"We would like to connect."}'`
 
 ---
 
@@ -1506,7 +1510,7 @@ Validation rules:
 
 * Coach pages require role = COACH **and approved coach**
 
-* Coach must be linked to the requesting team
+* Coach must be linked to the requesting team (if provided) or their profile association
 
 * When committed is true:
 

@@ -294,7 +294,7 @@ http://bc.localhost:8000/coach/requests/new/
 
 Choose:
 - Player (only allow‑listed players appear)
-- Requesting team (only your teams)
+- Requesting team (optional; choose a team or send via your association)
 - Optional message
 
 If a pending request already exists for that player+team, the system blocks duplicates.

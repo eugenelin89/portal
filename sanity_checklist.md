@@ -681,7 +681,7 @@ Expected:
 
   * duplicate pending request prevention
   * non-open player blocked
-  * coach approval + team membership enforcement
+  * coach approval + team membership (if team provided) or association enforcement
   * player-only approve/decline
   * audit log entries created
 
@@ -694,7 +694,17 @@ curl -i -X POST http://localhost:8000/api/v1/contact-requests/ \
   -H "Authorization: Bearer <coach_access_token>" \
   -H "Content-Type: application/json" \
   -H "Host: bc.localhost:8000" \
-  -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'
+  -d '{"player_id":12,"message":"We would like to connect."}'
+```
+
+Optional team-based request:
+
+```bash
+curl -i -X POST http://localhost:8000/api/v1/contact-requests/ \
+  -H "Authorization: Bearer <coach_access_token>" \
+  -H "Content-Type: application/json" \
+  -H "Host: bc.localhost:8000" \
+  -d '{"player_id":12,"message":"We would like to connect."}'
 ```
 
 Expected:
@@ -943,7 +953,7 @@ curl -i -X POST http://localhost:8000/api/v1/contact-requests/ \
   -H "Authorization: Bearer <coach_access_token>" \
   -H "Content-Type: application/json" \
   -H "Host: bc.localhost:8000" \
-  -d '{"player_id":12,"requesting_team_id":3,"message":"We would like to connect."}'
+  -d '{"player_id":12,"message":"We would like to connect."}'
 ```
 
 Expected:
@@ -1044,7 +1054,7 @@ curl -i -X POST http://localhost:8000/api/v1/contact-requests/ \
   -H "Authorization: Bearer <coach_access_token>" \
   -H "Content-Type: application/json" \
   -H "Host: bc.localhost:8000" \
-  -d '{"player_id":<player_id>,"requesting_team_id":<team_id>,"message":"We would like to connect."}'
+  -d '{"player_id":<player_id>,"message":"We would like to connect."}'
 ```
 
 Expected:

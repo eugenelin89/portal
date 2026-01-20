@@ -37,6 +37,8 @@ class ContactRequestApiTests(TestCase):
         self.assoc_bc = Association.objects.create(region=self.bc, name="BC Assoc")
         self.team_bc = Team.objects.create(region=self.bc, association=self.assoc_bc, name="BC Team", age_group="13U")
         TeamCoach.objects.create(user=self.coach, team=self.team_bc, is_active=True)
+        self.coach.profile.association = self.assoc_bc
+        self.coach.profile.save(update_fields=["association"])
 
     def test_non_open_player_blocked(self):
         PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=False)
@@ -57,6 +59,7 @@ class ContactRequestApiTests(TestCase):
         ContactRequest.objects.create(
             player=self.player,
             requesting_team=self.team_bc,
+            requesting_association=self.assoc_bc,
             requested_by=self.coach,
             region=self.bc,
         )
@@ -65,6 +68,40 @@ class ContactRequestApiTests(TestCase):
         response = self.client.post(
             "/api/v1/contact-requests/",
             {"player_id": self.player.id, "requesting_team_id": self.team_bc.id},
+            format="json",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 400)
+
+    def test_association_only_request_allowed(self):
+        availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
+        availability.allowed_associations.add(self.assoc_bc)
+
+        self.client.force_authenticate(user=self.coach)
+        response = self.client.post(
+            "/api/v1/contact-requests/",
+            {"player_id": self.player.id, "message": "Hello"},
+            format="json",
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertIsNone(response.data.get("requesting_team_id"))
+        self.assertEqual(response.data["requesting_association_id"], self.assoc_bc.id)
+
+    def test_association_only_duplicate_pending_blocked(self):
+        availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
+        availability.allowed_associations.add(self.assoc_bc)
+        ContactRequest.objects.create(
+            player=self.player,
+            requesting_association=self.assoc_bc,
+            requested_by=self.coach,
+            region=self.bc,
+        )
+
+        self.client.force_authenticate(user=self.coach)
+        response = self.client.post(
+            "/api/v1/contact-requests/",
+            {"player_id": self.player.id, "message": "Hello"},
             format="json",
             HTTP_HOST="bc.localhost:8000",
         )
@@ -110,6 +147,7 @@ class ContactRequestApiTests(TestCase):
         contact_request = ContactRequest.objects.create(
             player=self.player,
             requesting_team=self.team_bc,
+            requesting_association=self.assoc_bc,
             requested_by=self.coach,
             region=self.bc,
         )
@@ -214,6 +252,25 @@ class ContactRequestApiTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
+    def test_open_players_allows_profile_association(self):
+        coach = User.objects.create_user(username="coach_assoc", password="testpass")
+        coach.profile.role = AccountProfile.Roles.COACH
+        coach.profile.is_coach_approved = True
+        coach.profile.association = self.assoc_bc
+        coach.profile.save()
+
+        availability = PlayerAvailability.objects.create(
+            player=self.player,
+            region=self.bc,
+            is_open=True,
+        )
+        availability.allowed_associations.add(self.assoc_bc)
+
+        self.client.force_authenticate(user=coach)
+        response = self.client.get("/api/v1/open-players/", HTTP_HOST="bc.localhost:8000")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(response.data), 1)
+
     def test_open_players_respects_allow_list(self):
         availability = PlayerAvailability.objects.create(
             player=self.player,
@@ -253,6 +310,7 @@ class ContactRequestApiTests(TestCase):
         ContactRequest.objects.create(
             player=self.player,
             requesting_team=self.team_bc,
+            requesting_association=self.assoc_bc,
             requested_by=self.coach,
             region=self.bc,
         )
@@ -268,6 +326,7 @@ class ContactRequestApiTests(TestCase):
         contact_request = ContactRequest.objects.create(
             player=self.player,
             requesting_team=self.team_bc,
+            requesting_association=self.assoc_bc,
             requested_by=self.coach,
             region=self.bc,
         )

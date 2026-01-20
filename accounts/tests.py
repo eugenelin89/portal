@@ -55,6 +55,8 @@ class WebRoleGuardTests(TestCase):
         self.assoc_bc = Association.objects.create(region=self.bc, name="BC Assoc")
         self.team_bc = Team.objects.create(region=self.bc, association=self.assoc_bc, name="BC Team", age_group="13U")
         TeamCoach.objects.create(user=self.coach, team=self.team_bc, is_active=True)
+        self.coach.profile.association = self.assoc_bc
+        self.coach.profile.save(update_fields=["association"])
 
     def test_player_blocked_from_coach_pages(self):
         self.client.login(username="player1", password="testpass")
@@ -98,6 +100,25 @@ class WebRoleGuardTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Select a valid choice", status_code=200)
+
+    def test_coach_can_request_without_team(self):
+        availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
+        availability.allowed_associations.add(self.assoc_bc)
+
+        self.client.login(username="coach1", password="testpass")
+        response = self.client.post(
+            "/coach/requests/new/",
+            {"player": str(self.player.id), "message": "Hello"},
+            HTTP_HOST="bc.localhost:8000",
+        )
+        self.assertIn(response.status_code, (302, 303))
+        self.assertTrue(
+            ContactRequest.objects.filter(
+                player=self.player,
+                requesting_team__isnull=True,
+                requesting_association=self.assoc_bc,
+            ).exists()
+        )
 
     def test_cross_region_access_blocked(self):
         assoc_on = Association.objects.create(region=self.on, name="ON Assoc")
@@ -274,6 +295,7 @@ class CoachContactDetailsTests(TestCase):
         ContactRequest.objects.create(
             player=self.player,
             requesting_team=self.team,
+            requesting_association=self.assoc,
             requested_by=self.coach,
             region=self.region,
             status=ContactRequest.Status.PENDING,
@@ -289,6 +311,7 @@ class CoachContactDetailsTests(TestCase):
         ContactRequest.objects.create(
             player=self.player,
             requesting_team=self.team,
+            requesting_association=self.assoc,
             requested_by=self.coach,
             region=self.region,
             status=ContactRequest.Status.APPROVED,

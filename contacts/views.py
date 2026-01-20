@@ -74,7 +74,10 @@ class ContactRequestViewSet(CreateModelMixin, ListModelMixin, GenericViewSet):
             action=AUDIT_CONTACT_REQUEST_CREATED,
             target=contact_request,
             region=contact_request.region,
-            metadata={"requesting_team_id": contact_request.requesting_team_id},
+            metadata={
+                "requesting_team_id": contact_request.requesting_team_id,
+                "requesting_association_id": contact_request.requesting_association_id,
+            },
         )
         output = ContactRequestSerializer(contact_request, context={"request": request})
         return Response(output.data, status=status.HTTP_201_CREATED)

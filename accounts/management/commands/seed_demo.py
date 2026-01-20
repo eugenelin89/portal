@@ -149,3 +149,10 @@ class Command(BaseCommand):
             "-d '{\"player_id\":%d,\"requesting_team_id\":%d,\"message\":\"We would like to connect.\"}'"
             % (player_user.id, team_13_aaa.id)
         )
+        self.stdout.write(
+            "curl -X POST http://bc.localhost:8000/api/v1/contact-requests/ "
+            "-H 'Authorization: Bearer <coach_access_token>' "
+            "-H 'Content-Type: application/json' "
+            "-d '{\"player_id\":%d,\"message\":\"We would like to connect.\"}'"
+            % player_user.id
+        )

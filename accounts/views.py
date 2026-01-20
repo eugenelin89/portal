@@ -691,14 +691,16 @@ def _available_players_for_coach(region, request):
         is_active=True,
         team__region=region,
     ).values_list("team_id", flat=True))
-    if not team_ids:
-        return {}, Team.objects.none()
-
-    association_ids = TeamCoach.objects.filter(
+    association_ids = set(TeamCoach.objects.filter(
         user=request.user,
         is_active=True,
         team__region=region,
-    ).values_list("team__association_id", flat=True)
+    ).values_list("team__association_id", flat=True))
+    profile_association = getattr(getattr(request.user, "profile", None), "association", None)
+    if profile_association and profile_association.region_id == region.id:
+        association_ids.add(profile_association.id)
+    if not association_ids:
+        return {}, Team.objects.none()
     queryset = _open_players_queryset(region).filter(allowed_associations__in=association_ids).distinct()
     queryset = queryset.select_related("player", "player__player_profile")
 

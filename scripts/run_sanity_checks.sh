@@ -207,6 +207,8 @@ team_bc, _ = Team.objects.get_or_create(
     name="Sanity Team BC",
     age_group="13U",
 )
+coach.profile.association = assoc_bc
+coach.profile.save(update_fields=["association"])
 TeamCoach.objects.get_or_create(user=coach, team=team_bc, defaults={"is_active": True})
 
 assoc_on, _ = Association.objects.get_or_create(region=on, name="Sanity Assoc ON")
@@ -447,13 +449,13 @@ check_http 200 http://localhost:8000/api/v1/availability/search/ \
   -H "Authorization: Bearer ${SANITY_COACH_TOKEN}" \
   -H "Host: bc.localhost:8000"
 
-print_step 20 "Contact Request Create" "Prompt #7"
+print_step 20 "Contact Request Create (Association)" "Prompt #7"
 contact_create_code=$(curl -s -o "$TMP_BODY" -w "%{http_code}" \
   -X POST http://localhost:8000/api/v1/contact-requests/ \
   -H "Authorization: Bearer ${SANITY_COACH_TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Host: bc.localhost:8000" \
-  -d "{\"player_id\":${SANITY_PLAYER_ID},\"requesting_team_id\":${SANITY_TEAM_ID},\"message\":\"We would like to connect.\"}")
+  -d "{\"player_id\":${SANITY_PLAYER_ID},\"message\":\"We would like to connect.\"}")
 if [[ "$contact_create_code" == "201" ]]; then
   SANITY_CONTACT_REQUEST_ID=$(TMP_BODY_PATH="$TMP_BODY" python - <<'PY'
 import json
@@ -485,7 +487,7 @@ contact_decline_code=$(curl -s -o "$TMP_BODY" -w "%{http_code}" \
   -H "Authorization: Bearer ${SANITY_COACH_TOKEN}" \
   -H "Content-Type: application/json" \
   -H "Host: bc.localhost:8000" \
-  -d "{\"player_id\":${SANITY_PLAYER_ID},\"requesting_team_id\":${SANITY_TEAM_ID},\"message\":\"Second request.\"}")
+  -d "{\"player_id\":${SANITY_PLAYER_ID},\"message\":\"Second request.\"}")
 if [[ "$contact_decline_code" == "201" ]]; then
   decline_id=$(TMP_BODY_PATH="$TMP_BODY" python - <<'PY'
 import json
@@ -844,6 +846,7 @@ assert response.status_code == 204, response.status_code
 contact_request = ContactRequest.objects.create(
     player=player,
     requesting_team=team,
+    requesting_association=assoc,
     requested_by=coach,
     region=region,
     status=ContactRequest.Status.APPROVED,

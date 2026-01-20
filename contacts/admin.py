@@ -5,9 +5,21 @@ from contacts.models import AuditLog, ContactRequest
 
 @admin.register(ContactRequest)
 class ContactRequestAdmin(admin.ModelAdmin):
-    list_display = ("player", "requesting_team", "requested_by", "status", "created_at")
+    list_display = (
+        "player",
+        "requesting_team",
+        "requesting_association",
+        "requested_by",
+        "status",
+        "created_at",
+    )
     list_filter = ("status", "region")
-    search_fields = ("player__username", "requesting_team__name", "requested_by__username")
+    search_fields = (
+        "player__username",
+        "requesting_team__name",
+        "requesting_association__name",
+        "requested_by__username",
+    )
 
 
 @admin.register(AuditLog)

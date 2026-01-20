@@ -10,7 +10,15 @@
           <div class="card-body p-4">
             <div class="d-flex flex-column flex-md-row justify-content-between gap-3">
               <div>
-                <h2 class="h5 mb-1">{{ request_item.requesting_team.name }}</h2>
+                <h2 class="h5 mb-1">
+                  {% if request_item.requesting_team %}
+                    {{ request_item.requesting_team.name }}
+                  {% elif request_item.requesting_association %}
+                    {{ request_item.requesting_association.name }}
+                  {% else %}
+                    Association request
+                  {% endif %}
+                </h2>
                 <p class="text-muted mb-2">Coach: {{ request_item.requested_by.username }}</p>
                 {% if request_item.message %}
                   <p class="mb-2">{{ request_item.message }}</p>
