@@ -578,17 +578,20 @@ def _open_players_queryset(region):
 @require_approved_coach
 def coach_open_players(request):
     region = get_region_or_404(request)
-    team_ids = list(TeamCoach.objects.filter(
+    association_ids = set(TeamCoach.objects.filter(
         user=request.user,
         is_active=True,
         team__region=region,
-    ).values_list("team_id", flat=True))
-    if not team_ids:
+    ).values_list("team__association_id", flat=True))
+    profile_association = getattr(getattr(request.user, "profile", None), "association", None)
+    if profile_association and profile_association.region_id == region.id:
+        association_ids.add(profile_association.id)
+    if not association_ids:
         players = []
     else:
         queryset = (
             _open_players_queryset(region)
-            .filter(allowed_teams__in=team_ids)
+            .filter(allowed_associations__in=association_ids)
             .distinct()
             .select_related("player")
             .order_by("-updated_at")
@@ -605,7 +608,7 @@ def coach_open_players(request):
     context = {
         "players": players,
         "page_title": "Open Players",
-        "page_subtitle": "Players who have allowed your teams to view availability.",
+        "page_subtitle": "Players who have allowed your associations to view availability.",
     }
     return render(request, "coaches/open_players.html", context)
 
@@ -613,12 +616,15 @@ def coach_open_players(request):
 @require_approved_coach
 def coach_open_player_detail(request, player_id):
     region = get_region_or_404(request)
-    team_ids = list(TeamCoach.objects.filter(
+    association_ids = set(TeamCoach.objects.filter(
         user=request.user,
         is_active=True,
         team__region=region,
-    ).values_list("team_id", flat=True))
-    if not team_ids:
+    ).values_list("team__association_id", flat=True))
+    profile_association = getattr(getattr(request.user, "profile", None), "association", None)
+    if profile_association and profile_association.region_id == region.id:
+        association_ids.add(profile_association.id)
+    if not association_ids:
         raise Http404
 
     availability = (
@@ -635,7 +641,7 @@ def coach_open_player_detail(request, player_id):
         availability = None
 
     has_open_access = False
-    if availability and availability.allowed_teams.filter(id__in=team_ids).exists():
+    if availability and availability.allowed_associations.filter(id__in=association_ids).exists():
         has_open_access = True
 
     approved_request = ContactRequest.objects.filter(
@@ -688,7 +694,12 @@ def _available_players_for_coach(region, request):
     if not team_ids:
         return {}, Team.objects.none()
 
-    queryset = _open_players_queryset(region).filter(allowed_teams__in=team_ids).distinct()
+    association_ids = TeamCoach.objects.filter(
+        user=request.user,
+        is_active=True,
+        team__region=region,
+    ).values_list("team__association_id", flat=True)
+    queryset = _open_players_queryset(region).filter(allowed_associations__in=association_ids).distinct()
     queryset = queryset.select_related("player", "player__player_profile")
 
     players = {}

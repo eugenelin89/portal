@@ -448,7 +448,7 @@ Create model: PlayerAvailability
 - id
 - player (OneToOne to User or AccountProfile; one active record per player)
 - region (FK to Region, required)
-- is_open (boolean, default False)
+- is_open (boolean, default True)
 - positions (optional text or JSONField)
 - levels (optional text or JSONField)
 - expires_at (nullable datetime)
@@ -524,7 +524,7 @@ After:
 --- 
 ### Codex
 
-I checked codex_tasks.md and Task 5 is PlayerProfile (5.1/5.1A/5.2), while your request is for Open status/availability, which matches Task 6.1 and 6.1A (and 6.2 for allowed teams). Task 5.3 doesn’t exist in CODEX_TASKS.
+I checked codex_tasks.md and Task 5 is PlayerProfile (5.1/5.1A/5.2), while your request is for Open status/availability, which matches Task 6.1 and 6.1A (and 6.2 for allowed associations). Task 5.3 doesn’t exist in CODEX_TASKS.
 
 Do you want me to proceed with the availability work as Task 6.1/6.1A (and possibly 6.2), or should I implement Task 5 (PlayerProfile) instead?
 ---
@@ -534,7 +534,7 @@ Proceed with the “Open status / availability” work.
 
 Implement CODEX_TASKS.md:
 - Task 6.1 and Task 6.1A for Player Availability (“Open” status).
-- Also implement Task 6.2 ONLY if it is specifically about visibility controls (allowed teams / allow-list). If 6.2 is something else, skip it.
+- Also implement Task 6.2 ONLY if it is specifically about visibility controls (allowed associations / allow-list). If 6.2 is something else, skip it.
 
 Do NOT implement Task 5 (PlayerProfile) yet.
 
@@ -550,17 +550,17 @@ After implementing, summarize changes and provide curl examples.
 
 ### Requirements summary:
 - Add `availability` app + `PlayerAvailability` model (region-aware, expiration-aware).
-- Allow-list visibility controls (teams allowed to see a player’s Open status).
+- Allow-list visibility controls (associations allowed to see a player’s Open status).
 - API:
   - `GET/PATCH /api/v1/availability/me/` (player manages own status)
   - `GET /api/v1/availability/search/` (restricted to ADMIN + approved COACH)
-- Enforce: region isolation, expiration filtering, and team allow-list enforcement.
+- Enforce: region isolation, expiration filtering, and association allow-list enforcement.
 - Add tests for permissions, expiration, and region isolation.
 
 ### Outcome
 - Added `availability` app for player Open status with region-aware access and allow-listed visibility controls
 - `/api/v1/availability/me/` allows players to view/update their own Open status
-- `/api/v1/availability/search/` restricted to ADMIN + approved COACH, filtered by region + expiration, and enforces team allow-list
+- `/api/v1/availability/search/` restricted to ADMIN + approved COACH, filtered by region + expiration, and enforces association allow-list
 - Admin is view-only for availability records
 - Added tests for permissions, expiration, and region isolation
 
@@ -1022,7 +1022,7 @@ Create 3 users with known credentials (document them in output):
   - bats "R", throws "R"
 - Create availability for player1 in region BC:
   - is_open = True
-  - allow-list visibility includes the coach’s team (the one coach1 belongs to)
+  - allow-list visibility includes the coach’s association (the one coach1 belongs to)
   - expiration either null or in the future
 
 6) Tryout(s)
@@ -1060,7 +1060,7 @@ Deliverables:
 ### Outcome
 - Added `python manage.py seed_demo` management command
 - Seeds BC region, one association, three teams, demo users, and a tryout
-- Creates player profile + availability allow-listed to coach team
+- Creates player profile + availability allow-listed to coach association
 - Idempotent (safe to run multiple times)
 
 ### Verification
@@ -1385,7 +1385,7 @@ Deliver a professional-looking, **mobile-first** web UI where real users can com
    * Toggle `is_open`
    * Set positions / levels
    * Optional `expires_at`
-   * Manage allow-listed teams
+   * Manage allow-listed associations
 
 3. Toggle **Committed** status
 
@@ -1515,9 +1515,9 @@ Validation rules:
 
 * `expires_at` must be in the future if provided
 
-Allow-list team selection:
+Allow-list association selection:
 
-* Teams must be in the **current region only**
+* Associations must be in the **current region only**
 * Use a mobile-friendly multi-select
 * Include helper text explaining visibility
 
@@ -1798,7 +1798,7 @@ If player selected **“Available for transfer”** during signup:
 
 Otherwise:
 
-* Availability defaults to closed
+* Availability is not created; when created later it defaults to Open
 
 ---
 
@@ -1919,13 +1919,13 @@ Add query filters:
 * `date_from`
 * `date_to`
 
-### 4) Allowed Teams API (Availability)
+### 4) Allowed Associations API (Availability)
 
 Add endpoints for players to manage allow‑listed teams:
 
-* `GET /api/v1/availability/allowed-teams/`
-* `POST /api/v1/availability/allowed-teams/` (add by `team_id`)
-* `DELETE /api/v1/availability/allowed-teams/{team_id}/`
+* `GET /api/v1/availability/allowed-associations/`
+* `POST /api/v1/availability/allowed-associations/` (add by `association_id`)
+* `DELETE /api/v1/availability/allowed-associations/{association_id}/`
 
 Scope by region and authenticated player only.
 
@@ -2014,14 +2014,14 @@ This prompt is **documentation-first**: update the .md files so they accurately 
 
 * Reconcile MVP vs post‑MVP:
   * Move unimplemented items (Team Needs, verification system, per‑section privacy) to a “Future / Post‑MVP” section.
-  * Reflect that **Allowed Teams** is the MVP visibility mechanism (not Allowed Regions).
+  * Reflect that **Allowed Associations** is the MVP visibility mechanism (not Allowed Regions).
 * Ensure Contact Requests and Tryouts reflect current API/web behavior.
 
 ### 3) ARCHITECTURE.md
 
 * Update privacy model to match implemented controls:
   * Single profile visibility setting
-  * Allowed Teams for Open status
+  * Allowed Associations for Open status
 * Remove or clearly label unimplemented layers (Allowed Regions, per‑section visibility) as future.
 
 ### 4) CODEX_TASKS.md
@@ -2036,7 +2036,7 @@ This prompt is **documentation-first**: update the .md files so they accurately 
 
 * Confirm that MVP scope text reflects current features:
   * Coach tryout CRUD
-  * Allowed Teams visibility
+  * Allowed Associations visibility
   * Contact request flow
 * Mark any unimplemented nice‑to‑haves explicitly as out‑of‑scope.
 

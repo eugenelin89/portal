@@ -108,7 +108,7 @@ class Command(BaseCommand):
         availability.positions = ["OF"]
         availability.levels = ["AAA"]
         availability.save()
-        availability.allowed_teams.set([team_13_aaa])
+        availability.allowed_associations.set([team_13_aaa.association])
 
         start_date = timezone.localdate() + timedelta(days=7)
         end_date = start_date + timedelta(days=1)

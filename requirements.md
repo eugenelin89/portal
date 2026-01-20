@@ -97,7 +97,7 @@ Build a league-friendly **BC Baseball Transfer Portal** that reduces chaos durin
 - Per-section visibility is a post-MVP enhancement.
 
 ##### 5.3.3.1 Open Visibility Controls
-- MVP: Allowed Teams (explicit allow-list).
+- MVP: Allowed Associations (explicit allow-list).
 - Post-MVP: Allowed Regions.
 - Open status is never public.
 

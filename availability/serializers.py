@@ -1,13 +1,13 @@
 from rest_framework import serializers
 
 from availability.models import PlayerAvailability
-from organizations.models import Team
+from organizations.models import Association
 
 
 class PlayerAvailabilityMeSerializer(serializers.ModelSerializer):
-    allowed_teams = serializers.PrimaryKeyRelatedField(
+    allowed_associations = serializers.PrimaryKeyRelatedField(
         many=True,
-        queryset=Team.objects.all(),
+        queryset=Association.objects.all(),
         required=False,
     )
 
@@ -22,21 +22,21 @@ class PlayerAvailabilityMeSerializer(serializers.ModelSerializer):
             "positions",
             "levels",
             "expires_at",
-            "allowed_teams",
+            "allowed_associations",
             "created_at",
             "updated_at",
         )
         read_only_fields = ("id", "region", "committed_at", "created_at", "updated_at")
 
-    def validate_allowed_teams(self, teams):
+    def validate_allowed_associations(self, associations):
         request = self.context.get("request")
         region = getattr(request, "region", None)
         if region is None:
-            return teams
-        for team in teams:
-            if team.region_id != region.id:
-                raise serializers.ValidationError("Allowed teams must match the current region.")
-        return teams
+            return associations
+        for association in associations:
+            if association.region_id != region.id:
+                raise serializers.ValidationError("Allowed associations must match the current region.")
+        return associations
 
 
 class PlayerAvailabilitySearchSerializer(serializers.ModelSerializer):

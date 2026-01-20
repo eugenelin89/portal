@@ -239,7 +239,7 @@ availability.is_committed = False
 availability.committed_at = None
 availability.expires_at = None
 availability.save()
-availability.allowed_teams.set([team_bc])
+availability.allowed_associations.set([assoc_bc])
 
 ContactRequest.objects.filter(
     player=player,
@@ -405,6 +405,35 @@ check_http "401|403" http://localhost:8000/api/v1/tryouts/ \
   -H "Content-Type: application/json" \
   -d '{"name":"Test Tryout","start_date":"2026-01-10","end_date":"2026-01-10","location":"Test","registration_url":"https://example.com","association":1,"region":1}'
 
+print_step 18A "Availability Defaults Open" "Prompt #6"
+check_command_success "availability defaults open" \
+  python - <<'PY'
+import os
+import uuid
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
+django.setup()
+
+from django.contrib.auth import get_user_model
+
+from accounts.models import AccountProfile
+from availability.models import PlayerAvailability
+from regions.models import Region
+
+User = get_user_model()
+region = Region.objects.get(code="bc")
+
+username = f"sanity_open_default_{uuid.uuid4().hex[:8]}"
+user = User.objects.create_user(username=username, password="testpass123")
+user.profile.role = AccountProfile.Roles.PLAYER
+user.profile.save(update_fields=["role"])
+
+availability = PlayerAvailability.objects.create(player=user, region=region)
+assert availability.is_open is True
+print("ok")
+PY
+
 print_step 18 "Availability Me (Player)" "Prompt #6"
 check_http 200 http://localhost:8000/api/v1/availability/me/ \
   -X PATCH \
@@ -512,7 +541,20 @@ open_players_code=$(curl -s -o "$TMP_BODY" -w "%{http_code}" \
   -H "Authorization: Bearer ${SANITY_COACH_TOKEN}" \
   -H "Host: bc.localhost:8000")
 if [[ "$open_players_code" == "200" ]]; then
-  TMP_BODY_PATH="$TMP_BODY" check_json_empty_array "Empty list (committed excluded)"
+  TMP_BODY_PATH="$TMP_BODY" SANITY_PLAYER_ID="$SANITY_PLAYER_ID" \
+    check_command_success "committed player excluded" python - <<'PY'
+import json
+import os
+
+with open(os.environ["TMP_BODY_PATH"], "r", encoding="utf-8") as handle:
+    payload = json.load(handle)
+
+player_id = str(os.environ.get("SANITY_PLAYER_ID", ""))
+found = any(str(item.get("player_id")) == player_id for item in payload)
+if found:
+    raise SystemExit("committed player present in open-players response")
+print("ok")
+PY
 else
   report "HTTP 200" "HTTP $open_players_code" "no"
   exit 1
@@ -538,7 +580,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "transferportal.settings")
 django.setup()
 
 from contacts.models import ContactRequest
-from organizations.models import Team
+from organizations.models import Association, Team
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
@@ -688,7 +730,7 @@ PY
 
 ############################################
 
-print_step 56 "Tryouts + Allowed Teams + Contact Details" "Prompt #16"
+print_step 56 "Tryouts + Allowed Associations + Contact Details" "Prompt #16"
 check_command_success "mvp closeout checks pass" \
   python - <<'PY'
 import django
@@ -785,16 +827,16 @@ assert any(item["id"] == tryout_id for item in response.data)
 
 api_client.force_authenticate(user=player)
 response = api_client.post(
-    "/api/v1/availability/allowed-teams/",
-    {"team_id": team.id},
+    "/api/v1/availability/allowed-associations/",
+    {"association_id": assoc.id},
     format="json",
     HTTP_HOST="bc.localhost:8000",
 )
 assert response.status_code == 200, response.status_code
-assert response.data[0]["id"] == team.id
+assert response.data[0]["id"] == assoc.id
 
 response = api_client.delete(
-    f"/api/v1/availability/allowed-teams/{team.id}/",
+    f"/api/v1/availability/allowed-associations/{assoc.id}/",
     HTTP_HOST="bc.localhost:8000",
 )
 assert response.status_code == 204, response.status_code
@@ -924,10 +966,10 @@ tasks = (root / "codex_tasks.md").read_text(encoding="utf-8")
 assert "team needs" not in readme
 assert "Post-MVP Enhancements" in requirements
 assert "Team Needs (Post-MVP)" in requirements
-assert "MVP: Allowed Teams" in requirements
+assert "MVP: Allowed Associations" in requirements
 assert "Profile Visibility (MVP)" in architecture
 assert "Post-MVP: Allowed Regions" in architecture
-assert "availability/allowed-teams" in tasks
+assert "availability/allowed-associations" in tasks
 assert "contact-requests/<id>/respond/" in tasks
 assert "logo url" in requirements.lower()
 
@@ -988,6 +1030,9 @@ team_id = int(os.environ.get("SANITY_TEAM_ID", "0"))
 
 player = User.objects.get(username=player_user)
 team = Team.objects.get(id=team_id)
+association = team.association
+association = team.association
+association = team.association
 region = Region.objects.get(code="bc")
 
 profile, _ = PlayerProfile.objects.get_or_create(user=player)
@@ -1001,7 +1046,7 @@ availability.is_open = True
 availability.is_committed = False
 availability.expires_at = None
 availability.save(update_fields=["region", "is_open", "is_committed", "expires_at"])
-availability.allowed_teams.set([team.id])
+availability.allowed_associations.set([association.id])
 
 ContactRequest.objects.filter(player=player, requesting_team=team).delete()
 PY
@@ -1067,6 +1112,7 @@ team_id = int(os.environ.get("SANITY_TEAM_ID", "0"))
 player = User.objects.get(username=player_user)
 coach = User.objects.get(username=coach_user)
 team = Team.objects.get(id=team_id)
+association = team.association
 
 client = Client(HTTP_HOST="bc.localhost")
 assert client.login(username=player_user, password=player_pass)
@@ -1081,7 +1127,7 @@ resp = client.post(
         "is_open": "on",
         "positions": ["OF"],
         "levels": ["AAA"],
-        "allowed_teams": [team.id],
+        "allowed_associations": [association.id],
     },
 )
 assert resp.status_code in (302, 303), f"availability update expected redirect, got {resp.status_code}"

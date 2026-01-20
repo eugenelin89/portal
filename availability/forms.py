@@ -2,7 +2,7 @@ from django import forms
 from django.utils import timezone
 
 from availability.models import PlayerAvailability
-from organizations.models import Team
+from organizations.models import Association
 
 
 POSITION_CHOICES = [
@@ -37,16 +37,16 @@ class PlayerAvailabilityForm(forms.ModelForm):
         required=False,
         widget=forms.SelectMultiple,
     )
-    allowed_teams = forms.ModelMultipleChoiceField(
-        queryset=Team.objects.none(),
+    allowed_associations = forms.ModelMultipleChoiceField(
+        queryset=Association.objects.none(),
         required=False,
         widget=forms.SelectMultiple,
-        help_text="Only these teams can view your availability.",
+        help_text="Only these associations can view your availability.",
     )
 
     class Meta:
         model = PlayerAvailability
-        fields = ("is_open", "positions", "levels", "expires_at", "allowed_teams")
+        fields = ("is_open", "positions", "levels", "expires_at", "allowed_associations")
         widgets = {
             "expires_at": forms.DateTimeInput(attrs={"type": "datetime-local"}),
         }
@@ -55,7 +55,9 @@ class PlayerAvailabilityForm(forms.ModelForm):
         region = kwargs.pop("region", None)
         super().__init__(*args, **kwargs)
         if region is not None:
-            self.fields["allowed_teams"].queryset = Team.objects.filter(region=region).order_by("name")
+            self.fields["allowed_associations"].queryset = (
+                Association.objects.filter(region=region).order_by("name")
+            )
 
         for field_name in self.fields:
             field = self.fields[field_name]

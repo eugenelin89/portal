@@ -52,7 +52,7 @@ class ContactRequestApiTests(TestCase):
 
     def test_duplicate_pending_blocked(self):
         availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         ContactRequest.objects.create(
             player=self.player,
@@ -74,7 +74,7 @@ class ContactRequestApiTests(TestCase):
         availability = PlayerAvailability.objects.create(player=self.player, region=self.on, is_open=True)
         assoc_on = Association.objects.create(region=self.on, name="ON Assoc")
         team_on = Team.objects.create(region=self.on, association=assoc_on, name="ON Team", age_group="13U")
-        availability.allowed_teams.add(team_on)
+        availability.allowed_associations.add(assoc_on)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.post(
@@ -93,7 +93,7 @@ class ContactRequestApiTests(TestCase):
         TeamCoach.objects.create(user=unapproved, team=self.team_bc, is_active=True)
 
         availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         self.client.force_authenticate(user=unapproved)
         response = self.client.post(
@@ -106,7 +106,7 @@ class ContactRequestApiTests(TestCase):
 
     def test_player_can_respond_only_own_request(self):
         availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
         contact_request = ContactRequest.objects.create(
             player=self.player,
             requesting_team=self.team_bc,
@@ -129,7 +129,7 @@ class ContactRequestApiTests(TestCase):
 
     def test_audit_log_entries_created(self):
         availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
         self.client.force_authenticate(user=self.coach)
 
         response = self.client.post(
@@ -155,7 +155,7 @@ class ContactRequestApiTests(TestCase):
     @override_settings(EMAIL_BACKEND="django.core.mail.backends.locmem.EmailBackend")
     def test_contact_request_sends_email(self):
         availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
         self.client.force_authenticate(user=self.coach)
 
         response = self.client.post(
@@ -175,7 +175,7 @@ class ContactRequestApiTests(TestCase):
             is_open=True,
             expires_at=timezone.now() - timedelta(days=1),
         )
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.get("/api/v1/open-players/", HTTP_HOST="bc.localhost:8000")
@@ -189,7 +189,7 @@ class ContactRequestApiTests(TestCase):
             is_open=True,
             is_committed=True,
         )
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.post(
@@ -207,7 +207,7 @@ class ContactRequestApiTests(TestCase):
             is_open=True,
             is_committed=True,
         )
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.get("/api/v1/open-players/", HTTP_HOST="bc.localhost:8000")
@@ -220,13 +220,14 @@ class ContactRequestApiTests(TestCase):
             region=self.bc,
             is_open=True,
         )
-        other_team = Team.objects.create(
+        other_assoc = Association.objects.create(region=self.bc, name="Other Assoc")
+        Team.objects.create(
             region=self.bc,
-            association=self.assoc_bc,
+            association=other_assoc,
             name="Other Team",
             age_group="13U",
         )
-        availability.allowed_teams.add(other_team)
+        availability.allowed_associations.add(other_assoc)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.get("/api/v1/open-players/", HTTP_HOST="bc.localhost:8000")
@@ -239,7 +240,7 @@ class ContactRequestApiTests(TestCase):
             region=self.bc,
             is_open=True,
         )
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.get("/api/v1/open-players/", HTTP_HOST="on.localhost:8000")
@@ -248,7 +249,7 @@ class ContactRequestApiTests(TestCase):
 
     def test_contact_requests_list_region_isolation(self):
         availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
         ContactRequest.objects.create(
             player=self.player,
             requesting_team=self.team_bc,
@@ -263,7 +264,7 @@ class ContactRequestApiTests(TestCase):
 
     def test_contact_request_respond_region_isolation(self):
         availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
         contact_request = ContactRequest.objects.create(
             player=self.player,
             requesting_team=self.team_bc,

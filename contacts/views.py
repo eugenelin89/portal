@@ -123,12 +123,15 @@ def open_players(request):
     )
 
     if IsApprovedCoach().has_permission(request, None) and not IsAdminRole().has_permission(request, None):
-        team_ids = TeamCoach.objects.filter(
+        association_ids = set(TeamCoach.objects.filter(
             user=request.user,
             is_active=True,
             team__region=region,
-        ).values_list("team_id", flat=True)
-        queryset = queryset.filter(allowed_teams__in=team_ids).distinct()
+        ).values_list("team__association_id", flat=True))
+        profile_association = getattr(getattr(request.user, "profile", None), "association", None)
+        if profile_association and profile_association.region_id == region.id:
+            association_ids.add(profile_association.id)
+        queryset = queryset.filter(allowed_associations__in=association_ids).distinct()
 
     serializer = PlayerAvailabilitySearchSerializer(queryset, many=True)
     return Response(serializer.data)

@@ -56,8 +56,8 @@ class ContactRequestForm(forms.Form):
         if availability.is_committed:
             raise forms.ValidationError("Player is committed and unavailable.")
 
-        if not availability.allowed_teams.filter(id=team.id).exists():
-            raise forms.ValidationError("Player has not allowed this team to view availability.")
+        if not availability.allowed_associations.filter(id=team.association_id).exists():
+            raise forms.ValidationError("Player has not allowed this association to view availability.")
 
         if not Team.objects.filter(id=team.id, region=region).exists():
             raise forms.ValidationError("Requesting team not found in region.")

@@ -67,7 +67,7 @@ Social features may be added later with strict privacy controls.
 - Regional homepage hero banner image
 - Player profiles (private by default)
 - Optional achievement and highlight showcase
-- Open availability status with allow-listed team visibility
+- Open availability status with allow-listed association visibility
 - Contact request workflow
 - Audit logging for sensitive actions
 

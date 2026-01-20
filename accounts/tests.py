@@ -72,7 +72,7 @@ class WebRoleGuardTests(TestCase):
         other_player.profile.save()
 
         availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
         PlayerAvailability.objects.create(player=other_player, region=self.bc, is_open=True)
 
         self.client.login(username="coach1", password="testpass")
@@ -88,7 +88,7 @@ class WebRoleGuardTests(TestCase):
             age_group="13U",
         )
         availability = PlayerAvailability.objects.create(player=self.player, region=self.bc, is_open=True)
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         self.client.login(username="coach1", password="testpass")
         response = self.client.post(
@@ -103,7 +103,7 @@ class WebRoleGuardTests(TestCase):
         assoc_on = Association.objects.create(region=self.on, name="ON Assoc")
         team_on = Team.objects.create(region=self.on, association=assoc_on, name="ON Team", age_group="13U")
         availability = PlayerAvailability.objects.create(player=self.player, region=self.on, is_open=True)
-        availability.allowed_teams.add(team_on)
+        availability.allowed_associations.add(assoc_on)
 
         self.client.login(username="coach1", password="testpass")
         response = self.client.get(f"/coach/open-players/{self.player.id}/", HTTP_HOST="bc.localhost:8000")

@@ -72,15 +72,15 @@ If a feature does not directly support this loop, it is **out of scope for the M
 - Open status is:
   - Opt-in
   - Not public
-  - Visible only to permitted teams
+- Visible only to permitted associations
 
 ---
 
 ### 2.5 Open Visibility Controls (MVP Simplified)
 For MVP, **choose ONE visibility mechanism**:
 
-**MVP Choice:** Allowed Teams
-- Player explicitly selects which teams may view Open status
+**MVP Choice:** Allowed Associations
+- Player explicitly selects which associations may view Open status
 - No free browsing of Open players
 
 (Allowed Regions can be added post-MVP.)

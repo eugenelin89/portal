@@ -69,7 +69,7 @@ class AvailabilityApiTests(TestCase):
             region=self.bc,
             is_open=True,
         )
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.get("/api/v1/availability/search/", HTTP_HOST="bc.localhost:8000")
@@ -87,7 +87,7 @@ class AvailabilityApiTests(TestCase):
             is_open=True,
             expires_at=timezone.now() - timedelta(days=1),
         )
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.get("/api/v1/availability/search/", HTTP_HOST="bc.localhost:8000")
@@ -105,7 +105,7 @@ class AvailabilityApiTests(TestCase):
             region=self.on,
             is_open=True,
         )
-        availability.allowed_teams.add(team_on)
+        availability.allowed_associations.add(assoc_on)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.get("/api/v1/availability/search/", HTTP_HOST="bc.localhost:8000")
@@ -138,46 +138,45 @@ class AvailabilityApiTests(TestCase):
             is_open=True,
             is_committed=True,
         )
-        availability.allowed_teams.add(self.team_bc)
+        availability.allowed_associations.add(self.assoc_bc)
 
         self.client.force_authenticate(user=self.coach)
         response = self.client.get("/api/v1/availability/search/", HTTP_HOST="bc.localhost:8000")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
-    def test_player_can_manage_allowed_teams(self):
+    def test_player_can_manage_allowed_associations(self):
         self.client.force_authenticate(user=self.player)
         response = self.client.post(
-            "/api/v1/availability/allowed-teams/",
-            {"team_id": self.team_bc.id},
+            "/api/v1/availability/allowed-associations/",
+            {"association_id": self.assoc_bc.id},
             format="json",
             HTTP_HOST="bc.localhost:8000",
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 1)
-        self.assertEqual(response.data[0]["id"], self.team_bc.id)
+        self.assertEqual(response.data[0]["id"], self.assoc_bc.id)
 
         response = self.client.delete(
-            f"/api/v1/availability/allowed-teams/{self.team_bc.id}/",
+            f"/api/v1/availability/allowed-associations/{self.assoc_bc.id}/",
             HTTP_HOST="bc.localhost:8000",
         )
         self.assertEqual(response.status_code, 204)
-        response = self.client.get("/api/v1/availability/allowed-teams/", HTTP_HOST="bc.localhost:8000")
+        response = self.client.get("/api/v1/availability/allowed-associations/", HTTP_HOST="bc.localhost:8000")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.data), 0)
 
-    def test_allowed_teams_requires_player_role(self):
+    def test_allowed_associations_requires_player_role(self):
         self.client.force_authenticate(user=self.coach)
-        response = self.client.get("/api/v1/availability/allowed-teams/", HTTP_HOST="bc.localhost:8000")
+        response = self.client.get("/api/v1/availability/allowed-associations/", HTTP_HOST="bc.localhost:8000")
         self.assertEqual(response.status_code, 403)
 
-    def test_allowed_teams_region_isolation(self):
+    def test_allowed_associations_region_isolation(self):
         self.client.force_authenticate(user=self.player)
         assoc_on = Association.objects.create(region=self.on, name="ON Assoc")
-        team_on = Team.objects.create(region=self.on, association=assoc_on, name="ON Team", age_group="13U")
         response = self.client.post(
-            "/api/v1/availability/allowed-teams/",
-            {"team_id": team_on.id},
+            "/api/v1/availability/allowed-associations/",
+            {"association_id": assoc_on.id},
             format="json",
             HTTP_HOST="bc.localhost:8000",
         )

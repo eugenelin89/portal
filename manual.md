@@ -351,8 +351,8 @@ Key endpoints:
 - `GET /me/`
 - `GET /tryouts/` (public)
 - `GET/PATCH /availability/me/`
-- `GET/POST /availability/allowed-teams/`
-- `DELETE /availability/allowed-teams/<team_id>/`
+- `GET/POST /availability/allowed-associations/`
+- `DELETE /availability/allowed-associations/<association_id>/`
 - `GET /availability/search/` (approved coach or admin)
 - `GET /open-players/` (approved coach or admin)
 - `GET/PATCH /profile/me/` (player only)

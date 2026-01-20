@@ -86,6 +86,7 @@ class PlayerSignupForm(forms.Form):
         self.fields["profile_visibility"].help_text = (
             "Choose which associations can view your profile."
         )
+        self.fields["available_for_transfer"].initial = True
         self.fields["visible_associations"].help_text = (
             "Select specific associations if you chose the specific option."
         )

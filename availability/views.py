@@ -12,9 +12,8 @@ from availability.serializers import (
     PlayerAvailabilityMeSerializer,
     PlayerAvailabilitySearchSerializer,
 )
-from organizations.models import Team
-from organizations.serializers import TeamSerializer
-from organizations.models import TeamCoach
+from organizations.models import Association, TeamCoach
+from organizations.serializers import AssociationSerializer
 from regions.utils import get_request_region
 
 
@@ -84,12 +83,15 @@ def availability_search(request):
     queryset = _base_open_queryset(region)
 
     if IsApprovedCoach().has_permission(request, None) and not IsAdminRole().has_permission(request, None):
-        team_ids = TeamCoach.objects.filter(
+        association_ids = set(TeamCoach.objects.filter(
             user=request.user,
             is_active=True,
             team__region=region,
-        ).values_list("team_id", flat=True)
-        queryset = queryset.filter(allowed_teams__in=team_ids).distinct()
+        ).values_list("team__association_id", flat=True))
+        profile_association = getattr(getattr(request.user, "profile", None), "association", None)
+        if profile_association and profile_association.region_id == region.id:
+            association_ids.add(profile_association.id)
+        queryset = queryset.filter(allowed_associations__in=association_ids).distinct()
 
     serializer = PlayerAvailabilitySearchSerializer(queryset, many=True)
     return Response(serializer.data)
@@ -97,7 +99,7 @@ def availability_search(request):
 
 @api_view(["GET", "POST"])
 @permission_classes([IsAuthenticated, IsPlayerRole])
-def availability_allowed_teams(request):
+def availability_allowed_associations(request):
     region = get_request_region(request)
     if region is None:
         return Response({"detail": "Region is required."}, status=400)
@@ -110,22 +112,22 @@ def availability_allowed_teams(request):
         return Response({"detail": "Availability region mismatch."}, status=400)
 
     if request.method == "POST":
-        team_id = request.data.get("team_id")
-        if not team_id:
-            return Response({"detail": "team_id is required."}, status=400)
-        team = Team.objects.filter(id=team_id, region=region).first()
-        if team is None:
-            return Response({"detail": "Team not found in region."}, status=404)
-        availability.allowed_teams.add(team)
+        association_id = request.data.get("association_id")
+        if not association_id:
+            return Response({"detail": "association_id is required."}, status=400)
+        association = Association.objects.filter(id=association_id, region=region).first()
+        if association is None:
+            return Response({"detail": "Association not found in region."}, status=404)
+        availability.allowed_associations.add(association)
 
-    teams = availability.allowed_teams.filter(region=region).order_by("name")
-    serializer = TeamSerializer(teams, many=True)
+    associations = availability.allowed_associations.filter(region=region).order_by("name")
+    serializer = AssociationSerializer(associations, many=True)
     return Response(serializer.data)
 
 
 @api_view(["DELETE"])
 @permission_classes([IsAuthenticated, IsPlayerRole])
-def availability_allowed_team_delete(request, team_id):
+def availability_allowed_association_delete(request, association_id):
     region = get_request_region(request)
     if region is None:
         return Response({"detail": "Region is required."}, status=400)
@@ -134,9 +136,9 @@ def availability_allowed_team_delete(request, team_id):
     if availability is None:
         return Response({"detail": "Availability not found."}, status=404)
 
-    team = Team.objects.filter(id=team_id, region=region).first()
-    if team is None:
-        return Response({"detail": "Team not found in region."}, status=404)
+    association = Association.objects.filter(id=association_id, region=region).first()
+    if association is None:
+        return Response({"detail": "Association not found in region."}, status=404)
 
-    availability.allowed_teams.remove(team)
+    availability.allowed_associations.remove(association)
     return Response(status=204)

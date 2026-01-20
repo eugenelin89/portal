@@ -1612,7 +1612,7 @@ Expected:
 
 * Can toggle Open status
 * Can set positions/levels/expiry
-* Can update allow-listed teams (region-scoped only)
+* Can update allow-listed associations (region-scoped only)
 * Committed toggle works (committed players are hidden)
 
 ---
@@ -1834,7 +1834,7 @@ Expected:
 
 If not selected:
 
-* Availability remains closed or unset
+* Availability is not created; when created later it defaults to Open
 
 ---
 
@@ -1853,7 +1853,7 @@ You may proceed only if:
 
 ## Sanity Check — After Prompt #16 (MVP Closeout)
 
-These checks verify tryout CRUD for coaches, API parity, allowed-teams management, and contact detail visibility.
+These checks verify tryout CRUD for coaches, API parity, allowed-associations management, and contact detail visibility.
 
 ---
 
@@ -1867,7 +1867,7 @@ python manage.py test
 Expected:
 
 * New migrations apply cleanly
-* Tryout CRUD, filters, allowed teams, and contact detail tests pass
+* Tryout CRUD, filters, allowed associations, and contact detail tests pass
 
 ---
 
@@ -1902,14 +1902,14 @@ Expected:
 
 ---
 
-### 87. Allowed Teams API
+### 87. Allowed Associations API
 
 As a player, manage allow‑listed teams:
 
 ```
-GET /api/v1/availability/allowed-teams/
-POST /api/v1/availability/allowed-teams/   (team_id required)
-DELETE /api/v1/availability/allowed-teams/<team_id>/
+GET /api/v1/availability/allowed-associations/
+POST /api/v1/availability/allowed-associations/   (association_id required)
+DELETE /api/v1/availability/allowed-associations/<association_id>/
 ```
 
 Expected:
@@ -2017,7 +2017,7 @@ Confirm that docs no longer claim unimplemented features:
 
 * `README.md` does not mention Team Needs.
 * `REQUIREMENTS.md` labels Team Needs, Allowed Regions, and per-section privacy as post‑MVP.
-* `ARCHITECTURE.md` reflects MVP visibility controls (single profile visibility + allowed teams).
+* `ARCHITECTURE.md` reflects MVP visibility controls (single profile visibility + allowed associations).
 * `CODEX_TASKS.md` matches current API endpoints.
 
 ---

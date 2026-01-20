@@ -93,16 +93,16 @@ Future (post-MVP):
 - Additional audience types beyond allow-listed associations
 
 ### 4.2 “Open” Status Visibility
-“Open” status is especially sensitive and must be private by default.
+“Open” status is especially sensitive and must be private by default, even though new availability records default to Open.
 
 **Controls**
-- MVP: Allowed Teams (allow-list of teams that may view Open status)
+- MVP: Allowed Associations (allow-list of associations that may view Open status)
 - Post-MVP: Allowed Regions (list of regions that may view Open status)
 
 **Effective rule**
 A team can view a player’s Open status only if:
 - Team is in an allowed region AND
-- (optional) team is explicitly allow-listed (if enabled)
+- Team's association is allow-listed (MVP)
 
 ### 4.3 Contact Requests
 - Only teams that can view Open status can send ContactRequests.

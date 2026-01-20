@@ -17,7 +17,7 @@ class PlayerAvailabilityAdmin(admin.ModelAdmin):
         "positions",
         "levels",
         "expires_at",
-        "allowed_teams",
+        "allowed_associations",
         "created_at",
         "updated_at",
     )

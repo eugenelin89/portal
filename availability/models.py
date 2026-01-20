@@ -4,7 +4,7 @@ from django.db import models
 from django.utils import timezone
 
 from accounts.models import AccountProfile
-from organizations.models import Team
+from organizations.models import Association
 from regions.models import Region
 
 
@@ -15,13 +15,17 @@ class PlayerAvailability(models.Model):
         related_name="availability",
     )
     region = models.ForeignKey(Region, on_delete=models.PROTECT, related_name="availabilities")
-    is_open = models.BooleanField(default=False)
+    is_open = models.BooleanField(default=True)
     is_committed = models.BooleanField(default=False)
     committed_at = models.DateTimeField(null=True, blank=True)
     positions = models.JSONField(null=True, blank=True)
     levels = models.JSONField(null=True, blank=True)
     expires_at = models.DateTimeField(null=True, blank=True)
-    allowed_teams = models.ManyToManyField(Team, blank=True, related_name="allowed_availabilities")
+    allowed_associations = models.ManyToManyField(
+        Association,
+        blank=True,
+        related_name="allowed_availabilities",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

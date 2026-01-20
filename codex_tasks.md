@@ -339,31 +339,31 @@ Each task includes:
 
 ---
 
-### Task 6.2 — Allowed Teams Visibility (MVP Choice)
-**Goal:** Player can select which teams may view Open status.
+### Task 6.2 — Allowed Associations Visibility (MVP Choice)
+**Goal:** Player can select which associations may view Open status.
 
 **Implementation options:**
-- ManyToMany: `AvailabilityStatus.allowed_teams`
-- Or separate model: `OpenVisibilityPermit(player, team)`
+- ManyToMany: `AvailabilityStatus.allowed_associations`
+- Or separate model: `OpenVisibilityPermit(player, association)`
 
 **Files/Areas:** models + forms + UI
 
 **Acceptance Checks:**
-- Player can add/remove allowed teams
-- Only allowed teams can see the player in Open searches
+- Player can add/remove allowed associations
+- Only allowed associations can see the player in Open searches
 
 ---
 
 ### Task 6.2A — Open Visibility API
-**Goal:** API endpoints to manage allowed teams.
+**Goal:** API endpoints to manage allowed associations.
 
 **Examples:**
-- `GET /api/v1/availability/allowed-teams/` (list)
-- `POST /api/v1/availability/allowed-teams/` (add by `team_id`)
-- `DELETE /api/v1/availability/allowed-teams/<team_id>/` (remove)
+- `GET /api/v1/availability/allowed-associations/` (list)
+- `POST /api/v1/availability/allowed-associations/` (add by `association_id`)
+- `DELETE /api/v1/availability/allowed-associations/<association_id>/` (remove)
 
 **Acceptance Checks:**
-- Allowed teams list updates correctly
+- Allowed associations list updates correctly
 
 ---
 
@@ -395,7 +395,7 @@ Each task includes:
 - Player: `POST /api/v1/contact-requests/<id>/respond/` with status `approved` or `declined`
 
 **Acceptance Checks:**
-- Coach can create only if permitted (allowed teams visibility)
+-- Coach can create only if permitted (allowed associations visibility)
 - Player can accept/decline only their own requests
 
 ---
@@ -403,7 +403,7 @@ Each task includes:
 ### Task 7.2 — Coach UI: Send Contact Request
 **Goal:** Coach can search Open players they’re allowed to see and send a request (web UI).
 
-**Files/Areas:** views/templates, query filtering by allowed teams
+**Files/Areas:** views/templates, query filtering by allowed associations
 
 **Acceptance Checks:**
 - Coach sees list of Open players permitted

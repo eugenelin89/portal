@@ -81,8 +81,8 @@ class ContactRequestCreateSerializer(serializers.ModelSerializer):
         if not player_availability.is_open_effective:
             raise serializers.ValidationError("Player is not currently open.")
 
-        if not player_availability.allowed_teams.filter(id=team.id).exists():
-            raise serializers.ValidationError("Player has not allowed this team to view availability.")
+        if not player_availability.allowed_associations.filter(id=team.association_id).exists():
+            raise serializers.ValidationError("Player has not allowed this association to view availability.")
 
         if not TeamCoach.objects.filter(
             user=request.user,
